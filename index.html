@@ -148,6 +148,36 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .rank .nm small { font-weight: 500; color: var(--soft); }
 .rank .vl { font-family: var(--display); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rank .tt { display: flex; gap: 6px; width: 100%; justify-content: flex-end; }
+.gchip { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; font-weight: 700; font-size: 15px; line-height: 1.2; box-shadow: 0 3px 0 var(--line); text-align: center; user-select: none; -webkit-user-select: none; transition: opacity .25s, transform .15s; }
+.gchip.sel { border-color: var(--sky); box-shadow: 0 3px 0 var(--sky); }
+.gchip.over, .basket.over, .stem.over { border-color: var(--coral); background: color-mix(in srgb, var(--coral) 14%, var(--card)); transform: scale(1.04); }
+.gchip.lifted { opacity: .35; }
+.gchip.gone { opacity: 0; pointer-events: none; transform: scale(.85); }
+.gchip.good { border-color: var(--lime); background: var(--lime-bg); }
+.ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; box-shadow: 0 12px 24px rgba(0,0,0,.25); }
+.ghud { display: flex; justify-content: space-between; gap: 8px; }
+.gintro { display: flex; gap: 14px; align-items: center; }
+.gintro .ic { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #FFFFFF; flex: none; }
+.gintro .ic svg { width: 30px; height: 30px; }
+.gintro b { display: block; font-family: var(--display); font-size: 22px; }
+.gintro span { color: var(--soft); font-size: 14px; }
+.arena { position: relative; height: max(380px, calc(100dvh - 260px)); background: var(--bg2); border-radius: 20px; overflow: hidden; touch-action: none; }
+.fall { position: absolute; top: 0; left: 50%; transform: translate(-50%, 0); font-size: 20px; padding: 12px 16px; max-width: 80%; z-index: 2; cursor: grab; border-color: var(--sky); box-shadow: 0 4px 0 var(--sky); }
+.fall.late { border-color: var(--coral); box-shadow: 0 4px 0 var(--coral); }
+.fall.good { border-color: var(--lime); background: var(--lime-bg); }
+.fall.bad { border-color: var(--bad); background: var(--bad-bg); }
+.baskets { position: absolute; left: 8px; right: 8px; bottom: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.basket { background: var(--card); border: 2px dashed var(--soft); border-radius: 14px; min-height: 76px; padding: 6px 4px; font-weight: 700; font-size: 13px; line-height: 1.2; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; transition: transform .12s; }
+.basket.right { border-style: solid; border-color: var(--lime); background: var(--lime-bg); }
+.basket.wrong { border-style: solid; border-color: var(--bad); background: var(--bad-bg); }
+.pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pcol { display: flex; flex-direction: column; gap: 8px; }
+.plabel { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--soft); text-align: center; }
+.pcol .gchip { min-height: 54px; overflow-wrap: anywhere; }
+.stem { align-self: center; font-family: var(--display); font-size: clamp(28px, 8vw, 40px); padding: 18px 26px; min-width: 60%; border-style: dashed; }
+.affixes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.affixes .gchip { font-size: 20px; padding: 12px 18px; min-width: 76px; }
+.tabs.games { margin-top: -8px; }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
 @media (prefers-reduced-motion: reduce) { .pop, .shake { animation: none; } .tile, .xpbar i, .timer i { transition: none; } }
 </style>
@@ -300,7 +330,7 @@ const MODES = [
 
 let st = load();
 function load() {
-  const base = { lvl: {}, xp: 0, best: 0, dir: "en", today: "", done: 0, days: 0, last: "", wk: "", wxp: 0, resetSeen: 0 };
+  const base = { lvl: {}, xp: 0, best: 0, dir: "en", today: "", done: 0, days: 0, last: "", wk: "", wxp: 0, resetSeen: 0, games: {} };
   try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.lvl) return Object.assign(base, s); } catch (e) {}
   return base;
 }
@@ -346,7 +376,7 @@ function speak(text) {
 
 // ---------- home ----------
 function home() {
-  mode = "home"; stopSpeed(); offRank();
+  mode = "home"; stopSpeed(); offRank(); stopGame();
   const lv = Math.min(LEVELS.length - 1, Math.floor(st.xp / XP_PER_LEVEL)), inLv = st.xp - lv * XP_PER_LEVEL;
   const known = WORDS.filter(w => level(w) === 3).length;
   const goal = Math.min(1, st.done / DAILY_GOAL), C = 2 * Math.PI * 40;
@@ -362,7 +392,15 @@ function home() {
     <button class="tile wide" type="button" id="goSpeed"><span class="ic" style="background:var(--coral)">${svg("speed")}</span><span class="txt"><b>Speed round</b><span>60 seconds · 2 XP per answer · record +10 XP</span></span></button>
     <button class="tile wide" type="button" id="goRank"><span class="ic" style="background:var(--sun)">${svg("trophy")}</span><span class="txt"><b>Ranking</b><span>${me ? "See where you are in the 10c" : "Sign in and compete with the 10c"}</span></span></button>
     <div class="sec">Practise</div>
-    <div class="grid" id="tiles"></div>`;
+    <div class="grid" id="tiles"></div>
+    <div class="sec">Games</div>
+    <div class="grid" id="gtiles"></div>`;
+  GAMES.forEach(g => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "tile";
+    const best = (st.games || {})[g.id];
+    b.innerHTML = `<span class="ic" style="background:${g.color}">${gsvg(g.id)}</span><b>${g.name}</b><span>${best ? "Your best: " + g.fmt(best) : g.sub}</span>`;
+    b.addEventListener("click", () => openGame(g.id)); $("gtiles").appendChild(b);
+  });
   MODES.forEach(m => {
     const b = document.createElement("button"); b.type = "button"; b.className = "tile";
     b.innerHTML = `<span class="ic" style="background:${m.color}">${svg(m.id)}</span><b>${m.name}</b><span>${m.sub}</span>`;
@@ -572,7 +610,7 @@ function getDb() {
 }
 function payload() {
   const wk = weekKey();
-  return { name: me.name, xp: st.xp, best: st.best, days: st.days, last: st.last, wk: st.wk === wk ? wk : wk, wxp: st.wk === wk ? st.wxp : 0, lvl: null, lvlJ: JSON.stringify(st.lvl), t: Date.now() };
+  return { name: me.name, xp: st.xp, best: st.best, days: st.days, last: st.last, wk: st.wk === wk ? wk : wk, wxp: st.wk === wk ? st.wxp : 0, lvl: null, lvlJ: JSON.stringify(st.lvl), games: st.games || {}, t: Date.now() };
 }
 function scheduleSync() {
   if (!me) return;
@@ -583,7 +621,7 @@ let resetChecked = false;
 function applyReset(r) {
   r = r || 0;
   if (r > (st.resetSeen || 0)) {
-    Object.assign(st, { xp: 0, wxp: 0, best: 0, days: 0, last: "", resetSeen: r });
+    Object.assign(st, { xp: 0, wxp: 0, best: 0, days: 0, last: "", games: {}, resetSeen: r });
     try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
     drawTop(); if (mode === "home") home();
   }
@@ -608,6 +646,8 @@ function merge(a, b) {
   if ((b.last || "") && (!a.last || new Date(b.last) > new Date(a.last) || (b.last === a.last && (b.days || 0) > (a.days || 0)))) { out.last = b.last; out.days = b.days || 0; }
   const aw = a.wk === wk ? (a.wxp || 0) : 0, bw = b.wk === wk ? (b.wxp || 0) : 0;
   out.wk = wk; out.wxp = Math.max(aw, bw);
+  out.games = Object.assign({}, a.games || {});
+  Object.entries(b.games || {}).forEach(([k, v]) => { const g = GAMES.find(x => x.id === k); if (!g || !v) return; const c = out.games[k]; out.games[k] = !c ? v : g.low ? Math.min(c, v) : Math.max(c, v); });
   out.lvl = Object.assign({}, a.lvl || {}); let bl = b.lvl || {}; try { if (b.lvlJ) bl = JSON.parse(b.lvlJ); } catch (e) {}
   Object.entries(bl).forEach(([k, v]) => { out.lvl[k] = Math.max(out.lvl[k] || 0, v); });
   return out;
@@ -663,6 +703,7 @@ function rankScreen() {
   if (!me && !teacher) return joinScreen();
   mode = "rank"; stopSpeed(); offRank();
   shell("Ranking", `<div class="tabs" role="tablist">${TABS.map(t => `<button type="button" role="tab" class="tab${t.id === rankTab ? " on" : ""}" data-t="${t.id}" aria-selected="${t.id === rankTab}">${t.name}</button>`).join("")}</div>
+    <div class="tabs games" role="tablist">${GTABS.map(t => `<button type="button" role="tab" class="tab${t.id === rankTab ? " on" : ""}" data-t="${t.id}" aria-selected="${t.id === rankTab}">${t.name}</button>`).join("")}</div>
     <ol class="rank" id="rankList"><li class="note">Loading …</li></ol>
     <p class="note center" id="rankNote"></p>`);
   document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { rankTab = b.dataset.t; document.querySelectorAll(".tab").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b); }); drawRank(); }));
@@ -674,9 +715,10 @@ function rankScreen() {
 let rankData = {};
 function drawRank() {
   const list = $("rankList"); if (!list) return;
-  const t = TABS.find(x => x.id === rankTab);
+  const t = [...TABS, ...GTABS].find(x => x.id === rankTab) || TABS[0];
   const rows = Object.entries(rankData).filter(([, u]) => u && u.name && (teacher || !badName(u.name))).map(([id, u]) => ({ id, name: u.name, v: t.val(u), u, bad: badName(u.name) }))
-    .sort((a, b) => b.v - a.v || a.name.localeCompare(b.name));
+    .filter(r => !t.game || r.v > 0)
+    .sort((a, b) => (t.low ? a.v - b.v : b.v - a.v) || a.name.localeCompare(b.name));
   let place = 0, prev = null;
   list.innerHTML = rows.map((r, i) => {
     if (r.v !== prev) { place = i + 1; prev = r.v; }
@@ -684,7 +726,7 @@ function drawRank() {
     const tools = teacher ? `<span class="tt"><button class="btn small" type="button" data-pin="${esc(r.id)}">PIN reset</button><button class="btn small no" type="button" data-del="${esc(r.id)}">Delete</button></span>` : "";
     return `<li class="${me && r.id === me.id ? "me" : ""}"><span class="pl${medal}">${place}</span><span class="nm">${esc(r.name)}${r.bad ? " <small>(hidden: blocked name)</small>" : ""}${me && r.id === me.id ? " <small>(you)</small>" : ""}</span><span class="vl">${t.fmt(r.v)}</span>${tools}</li>`;
   }).join("") || `<li class="note">Nobody is here yet.</li>`;
-  $("rankNote").textContent = rankTab === "week" ? "The weekly ranking starts again every Monday." : rankTab === "streak" ? "Days in a row with at least one right answer." : rankTab === "speed" ? "Best score in the 60-second speed round." : "All XP you have collected.";
+  $("rankNote").textContent = t.game ? `${t.name}: ${t.low ? "fastest time" : "best score"}. Games do not give XP.` : rankTab === "week" ? "The weekly ranking starts again every Monday." : rankTab === "streak" ? "Days in a row with at least one right answer." : rankTab === "speed" ? "Best score in the 60-second speed round." : "All XP you have collected.";
   if (teacher) {
     list.querySelectorAll("[data-pin]").forEach(b => b.addEventListener("click", () => { getDb().ref(ROOT + "/users/" + b.dataset.pin + "/pin").remove(); b.textContent = "PIN removed"; b.disabled = true; }));
     list.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
@@ -704,6 +746,241 @@ function signOut() {
   st = load(); drawTop(); resetIdle(); joinScreen();
 }
 
+// ---------- games (own leaderboards, no XP) ----------
+const GAMES = [
+  { id: "drop", name: "Word Drop", sub: "catch the falling words", color: "var(--coral)", low: false, fmt: v => v + " pts" },
+  { id: "match", name: "Match it", sub: "English ↔ German", color: "var(--sky)", low: true, fmt: v => (v / 10).toFixed(1) + " s" },
+  { id: "conn", name: "Collocation Connect", sub: "words that go together", color: "var(--violet)", low: true, fmt: v => (v / 10).toFixed(1) + " s" },
+  { id: "build", name: "Word Builder", sub: "add the right ending", color: "var(--lime)", low: false, fmt: v => v + " pts" }
+];
+const GICONS = {
+  drop: '<path d="M12 3v10M8 9l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  match: '<rect x="3" y="4" width="8" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="8" height="7" rx="2" fill="currentColor"/><path d="M11 7.5h3.5a2 2 0 0 1 2 2V13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  conn: ICONS.coll,
+  build: '<rect x="3" y="7" width="9" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="14" y="9" width="7" height="6" rx="2" fill="currentColor"/><path d="M12 12h2" stroke="currentColor" stroke-width="2"/>'
+};
+const gsvg = id => `<svg viewBox="0 0 24 24" aria-hidden="true">${GICONS[id]}</svg>`;
+const shortDe = s => s.split(/ \/ |, /)[0].trim();
+let gameT = null, gameRAF = null;
+function stopGame() { if (gameT) { clearInterval(gameT); gameT = null; } if (gameRAF) { cancelAnimationFrame(gameRAF); gameRAF = null; } }
+function isBetter(g, v) { const b = (st.games || {})[g.id] || 0; return v > 0 && (!b || (g.low ? v < b : v > b)); }
+function setRecord(g, v) { st.games = st.games || {}; const rec = isBetter(g, v); if (rec) { st.games[g.id] = v; save(); } return rec; }
+
+// drag and drop for touch and mouse; a short tap counts as a tap (select, then tap the target)
+let picked = null;
+function draggable(el, targetSel, onDrop) {
+  el.style.touchAction = "none"; el._target = targetSel;
+  el.addEventListener("pointerdown", e => {
+    if (el.classList.contains("gone")) return;
+    e.preventDefault();
+    const r = el.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, sx = e.clientX, sy = e.clientY;
+    let ghost = null, moved = false, over = null;
+    try { el.setPointerCapture(e.pointerId); } catch (x) {}
+    const move = ev => {
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 8) return;
+      if (!moved) { moved = true; ghost = el.cloneNode(true); ghost.classList.add("ghost"); ghost.classList.remove("sel"); ghost.style.width = r.width + "px"; document.body.appendChild(ghost); el.classList.add("lifted"); }
+      ghost.style.transform = `translate(${ev.clientX - dx}px, ${ev.clientY - dy}px) rotate(-2deg)`;
+      const hit = document.elementFromPoint(ev.clientX, ev.clientY), tg = hit && hit.closest(targetSel);
+      if (tg !== over) { if (over) over.classList.remove("over"); over = tg && !tg.classList.contains("gone") ? tg : null; if (over) over.classList.add("over"); }
+    };
+    const up = () => {
+      el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); el.removeEventListener("pointercancel", up);
+      if (ghost) ghost.remove(); el.classList.remove("lifted"); if (over) over.classList.remove("over");
+      el._dragged = moved;
+      if (moved) { if (over) onDrop(el, over); }
+      else if (picked && picked !== el && el.matches(picked._target)) { const p = picked; picked = null; p.classList.remove("sel"); onDrop(p, el); }
+      else { document.querySelectorAll(".gchip.sel").forEach(x => x.classList.remove("sel")); if (picked === el) picked = null; else { picked = el; el.classList.add("sel"); } }
+    };
+    el.addEventListener("pointermove", move); el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+  });
+}
+function flash(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+// leaderboard for one game
+async function gameBoard(g, box) {
+  box.innerHTML = `<p class="note">Loading ranking …</p>`;
+  const d = getDb();
+  if (!d || !me) { box.innerHTML = `<p class="note center">${me ? "No connection." : "Sign in to see the class ranking for this game."}</p>`; return; }
+  let data = {};
+  try { data = (await d.ref(ROOT + "/users").get()).val() || {}; } catch (e) { box.innerHTML = `<p class="note center">The ranking is not reachable right now.</p>`; return; }
+  const rows = Object.entries(data).filter(([, u]) => u && u.name && !badName(u.name) && u.games && u.games[g.id] > 0)
+    .map(([id, u]) => ({ id, name: u.name, v: u.games[g.id] })).sort((a, b) => g.low ? a.v - b.v : b.v - a.v);
+  const mine = rows.findIndex(r => r.id === me.id);
+  const show = rows.slice(0, 10);
+  box.innerHTML = `<ol class="rank">${show.map((r, i) => `<li class="${r.id === me.id ? "me" : ""}"><span class="pl${i < 3 ? " m" + (i + 1) : ""}">${i + 1}</span><span class="nm">${esc(r.name)}${r.id === me.id ? " <small>(you)</small>" : ""}</span><span class="vl">${g.fmt(r.v)}</span></li>`).join("") || `<li class="note">Nobody has played yet. Be the first!</li>`}
+    ${mine >= 10 ? `<li class="me"><span class="pl">${mine + 1}</span><span class="nm">${esc(me.name)} <small>(you)</small></span><span class="vl">${g.fmt(rows[mine].v)}</span></li>` : ""}</ol>`;
+}
+function gameIntro(g, how, startFn) {
+  stopGame(); offRank(); mode = "game";
+  const b = (st.games || {})[g.id];
+  shell(g.name, `<div class="gintro"><span class="ic" style="background:${g.color}">${gsvg(g.id)}</span><div><b>${g.name}</b><span>${how}</span></div></div>
+    <div class="row"><button class="btn go" type="button" id="go">Start</button>${b ? `<span class="chip">Your best: ${g.fmt(b)}</span>` : ""}</div>
+    <div class="sec">Class ranking</div><div id="gboard"></div>`);
+  $("go").addEventListener("click", startFn);
+  gameBoard(g, $("gboard"));
+}
+function gameOver(g, v, line) {
+  stopGame();
+  const rec = setRecord(g, v), b = st.games[g.id];
+  if (rec) confetti();
+  shell(g.name, `<div class="spacer"></div><p class="note center">${line}</p><div class="big">${v ? g.fmt(v) : "–"}</div>
+    <p class="note center">${rec ? "New personal record!" : b ? "Your best: " + g.fmt(b) : ""}</p>
+    <div class="row" style="justify-content:center"><button class="btn go" type="button" id="go">Play again</button><button class="btn" type="button" id="gHome">Back</button></div>
+    <div class="sec">Class ranking</div><div id="gboard"></div>`);
+  $("go").addEventListener("click", () => GSTART[g.id]());
+  $("gHome").addEventListener("click", home);
+  setTimeout(() => $("gboard") && gameBoard(g, $("gboard")), rec && me ? 1800 : 0);
+}
+
+// ---- Word Drop ----
+function dropGame() {
+  const g = GAMES[0];
+  stopGame(); mode = "game";
+  shell(g.name, `<div class="ghud"><span class="chip" id="dLives">♥♥♥</span><span class="chip" id="dScore">0 pts</span></div>
+    <div class="arena" id="arena"><div class="fall gchip" id="fall"></div><div class="baskets" id="baskets"></div></div>`);
+  const arena = $("arena"), fall = $("fall"), baskets = $("baskets");
+  let lives = 3, score = 0, speed = 34, y = 0, held = false, cur = null, busy = false, last = performance.now(), streak = 0;
+  const hud = () => { $("dLives").textContent = "♥".repeat(lives) + "♡".repeat(3 - lives); $("dScore").textContent = score + " pts"; };
+  function next() {
+    cur = pickWord(); busy = false; held = false; y = 0;
+    const opts = shuffle([cur, ...shuffle(WORDS.filter(w => w !== cur && shortDe(w.de) !== shortDe(cur.de))).slice(0, 2)]);
+    baskets.innerHTML = opts.map((w, i) => `<button type="button" class="basket" lang="de" data-ok="${w === cur ? 1 : 0}">${esc(shortDe(w.de))}</button>`).join("");
+    baskets.querySelectorAll(".basket").forEach(b => b.addEventListener("click", () => judge(b)));
+    fall.textContent = plain(cur.en); fall.className = "fall gchip"; fall.style.left = ""; fall.style.transform = "";
+  }
+  function judge(b) {
+    if (busy) return; busy = true; held = false;
+    const ok = b && b.dataset.ok === "1";
+    baskets.querySelectorAll(".basket").forEach(x => { if (x.dataset.ok === "1") x.classList.add("right"); else if (x === b) x.classList.add("wrong"); });
+    if (ok) { streak++; score += 10 + Math.floor(speed / 10) + (streak % 5 === 0 ? 20 : 0); speed = Math.min(170, speed * 1.07); fall.classList.add("good"); if (streak % 5 === 0) confetti(); }
+    else { streak = 0; lives--; fall.classList.add("bad"); fall.textContent = plain(cur.en) + " = " + shortDe(cur.de); }
+    hud();
+    setTimeout(() => { if (lives <= 0) gameOver(g, score, "Game over!"); else next(); }, ok ? 380 : 1300);
+  }
+  // falling word: drag it onto a basket, or tap a basket
+  fall.style.touchAction = "none";
+  let fx = 0, fy = 0, dxo = 0, dyo = 0, over = null;
+  fall.addEventListener("pointerdown", e => {
+    if (busy) return; e.preventDefault(); held = true;
+    const r = fall.getBoundingClientRect(); dxo = e.clientX - r.left; dyo = e.clientY - r.top;
+    try { fall.setPointerCapture(e.pointerId); } catch (x) {}
+  });
+  fall.addEventListener("pointermove", e => {
+    if (!held || busy) return;
+    const a = arena.getBoundingClientRect(); fx = e.clientX - a.left - dxo; fy = e.clientY - a.top - dyo;
+    fall.style.left = "0px"; fall.style.transform = `translate(${fx}px, ${fy}px)`;
+    fall.style.visibility = "hidden"; const hit = document.elementFromPoint(e.clientX, e.clientY); fall.style.visibility = "";
+    const tg = hit && hit.closest(".basket"); if (tg !== over) { if (over) over.classList.remove("over"); over = tg; if (over) over.classList.add("over"); }
+  });
+  const release = () => { if (!held) return; held = false; if (over) { over.classList.remove("over"); const t = over; over = null; judge(t); } else { fall.style.left = ""; } };
+  fall.addEventListener("pointerup", release); fall.addEventListener("pointercancel", release);
+  function frame(t) {
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    if (!busy) {
+      y += speed * dt;
+      const limit = baskets.offsetTop - fall.offsetHeight;
+      if (y >= limit) { judge(null); }
+      else if (!held) { fall.style.transform = `translate(-50%, ${y}px)`; fall.style.left = "50%"; }
+      const warn = y > limit * 0.7; fall.classList.toggle("late", warn);
+    }
+    gameRAF = requestAnimationFrame(frame);
+  }
+  hud(); next(); last = performance.now(); gameRAF = requestAnimationFrame(frame);
+}
+
+// ---- pair games: Match it, Collocation Connect ----
+const CPAIRS = COLLS.map(c => c[0].startsWith("___") ? [c[1], c[0].replace(/^___ /, "").replace(/\s*\(.*\)$/, "")] : [c[0].replace(/ ___$/, ""), c[1]]);
+const CEXTRA = [["reduce", "the impact"], ["reduce", "damage"], ["minimize", "carbon emissions"], ["minimize", "damage"], ["protect", "the habitat of animals"], ["protect", "the ocean"],
+  ["threaten", "endangered species"], ["explore", "the ocean"], ["cause", "climate change"], ["boost", "tourism"], ["eco-friendly", "tourism"], ["leisure", "times"], ["prehistoric", "time"]];
+const CVALID = new Set([...CPAIRS, ...CEXTRA].map(p => p[0] + "|" + p[1]));
+function pickBoard(all, n, valid) {
+  for (let k = 0; k < 60; k++) {
+    const b = shuffle(all).slice(0, n);
+    // no dead ends: if a left word fits another right word on the board, the swapped pair must fit too
+    const okb = b.every(([l1, r1]) => b.every(([l2, r2]) => l1 === l2 || !valid(l1, r2) || valid(l2, r1)));
+    if (okb) return b;
+  }
+  return shuffle(all).slice(0, n);
+}
+function pairGame(g, boards, perBoard, makeAll, valid, leftLabel, rightLabel) {
+  stopGame(); mode = "game";
+  let round = 0, pen = 0, t0 = performance.now(), left = 0;
+  shell(g.name, `<div class="ghud"><span class="chip" id="pRound"></span><span class="chip" id="pTime">0.0 s</span></div>
+    <div class="pairs"><div class="pcol" id="pL"></div><div class="pcol" id="pR"></div></div><p class="note center" id="pNote">Drag a word onto its partner, or tap one and then the other.</p>`);
+  const tick = () => { const el = $("pTime"); if (el) el.textContent = ((performance.now() - t0) / 1000 + pen).toFixed(1) + " s"; };
+  gameT = setInterval(tick, 100);
+  function board() {
+    round++; $("pRound").textContent = `Board ${round}/${boards}`;
+    const b = pickBoard(makeAll(), perBoard, valid); left = b.length;
+    $("pL").innerHTML = `<div class="plabel">${leftLabel}</div>` + shuffle(b).map(p => `<button type="button" class="gchip pl1" data-v="${esc(p[0])}">${esc(p[0])}</button>`).join("");
+    $("pR").innerHTML = `<div class="plabel">${rightLabel}</div>` + shuffle(b).map(p => `<button type="button" class="gchip pr1" data-v="${esc(p[1])}">${esc(p[1])}</button>`).join("");
+    const drop = (a, t) => {
+      const l = a.classList.contains("pl1") ? a : t, r = a.classList.contains("pl1") ? t : a;
+      if (!l.classList.contains("pl1") || !r.classList.contains("pr1")) return;
+      if (valid(l.dataset.v, r.dataset.v)) {
+        [l, r].forEach(x => { x.classList.add("gone", "good"); });
+        if (--left === 0) { if (round < boards) setTimeout(board, 350); else { tick(); const v = Math.round(((performance.now() - t0) / 1000 + pen) * 10); setTimeout(() => gameOver(g, v, "All pairs found!"), 400); } }
+      } else { pen += 3; [l, r].forEach(x => flash(x, "shake")); $("pNote").textContent = "Not a pair: +3 seconds"; tick(); }
+    };
+    document.querySelectorAll(".pl1").forEach(x => draggable(x, ".pr1", drop));
+    document.querySelectorAll(".pr1").forEach(x => draggable(x, ".pl1", drop));
+  }
+  board();
+}
+function matchGame() {
+  pairGame(GAMES[1], 2, 6, () => WORDS.map(w => [plain(w.en), shortDe(w.de)]), (l, r) => WORDS.some(w => plain(w.en) === l && shortDe(w.de) === r), "English", "German");
+}
+function connGame() {
+  pairGame(GAMES[2], 2, 6, () => CPAIRS, (l, r) => CVALID.has(l + "|" + r), "Start", "End");
+}
+
+// ---- Word Builder ----
+const BUILD = [
+  ["explore", "noun", "-ation", "exploration"], ["pollute", "noun", "-ion", "pollution"], ["contribute", "noun", "-ion", "contribution"],
+  ["dehydrate", "noun", "-ion", "dehydration"], ["persuade", "noun", "-sion", "persuasion"], ["develop", "noun", "-ment", "development"],
+  ["distant", "noun", "-ance", "distance"], ["profit", "adjective", "-able", "profitable"], ["access", "adjective", "-ible", "accessible"],
+  ["accessible", "opposite", "in-", "inaccessible"], ["environment", "adjective", "-al", "environmental"], ["industry", "adjective", "-al", "industrial"],
+  ["nature", "adjective", "-al", "natural"], ["danger", "adjective", "-ous", "dangerous"], ["attract", "adjective", "-ive", "attractive"],
+  ["harm", "adjective", "-ful", "harmful"], ["harm", "opposite of harmful", "-less", "harmless"], ["found", "person", "-er", "founder"],
+  ["history", "adjective", "-ic", "historic"], ["wealth", "adjective", "-y", "wealthy"], ["endanger", "adjective", "-ed", "endangered"],
+  ["archaeology", "person", "-ist", "archaeologist"], ["develop", "adjective", "-ing", "developing"], ["equal", "noun", "-ity", "equality"]
+];
+const AFFIX = ["-ation", "-ion", "-sion", "-ment", "-ance", "-able", "-ible", "in-", "-al", "-ous", "-ive", "-ful", "-less", "-er", "-ic", "-y", "-ed", "-ist", "-ing", "-ity"];
+function buildGame() {
+  const g = GAMES[3];
+  stopGame(); mode = "game";
+  let score = 0, left = 60, cur = null, busy = false, lastB = null;
+  shell(g.name, `<div class="ghud"><span class="chip" id="bTime">60 s</span><span class="chip" id="bScore">0 pts</span></div>
+    <div class="timer"><i id="bBar" style="width:100%"></i></div>
+    <div class="stem gchip" id="stem"></div><p class="note center" id="bAsk"></p>
+    <div class="affixes" id="aff"></div><p class="note center" id="bNote">Drag the right ending onto the word, or tap it.</p>`);
+  const hud = () => { $("bScore").textContent = score + " pts"; };
+  function next() {
+    busy = false;
+    do { cur = rnd(BUILD); } while (cur === lastB); lastB = cur;
+    $("stem").textContent = cur[0]; $("stem").className = "stem gchip"; $("bAsk").textContent = "→ " + cur[1];
+    const opts = shuffle([cur[2], ...shuffle(AFFIX.filter(a => a !== cur[2])).slice(0, 4)]);
+    $("aff").innerHTML = opts.map(a => `<button type="button" class="gchip aff" data-a="${a}">${a}</button>`).join("");
+    document.querySelectorAll(".aff").forEach(x => { draggable(x, ".stem", (el) => judge(el)); x.addEventListener("click", () => { if (x._dragged) { x._dragged = false; return; } judge(x); }); });
+  }
+  function judge(el) {
+    if (busy || !el) return; picked = null;
+    if (el.dataset.a === cur[2]) { busy = true; score += 10; $("stem").textContent = cur[3]; $("stem").classList.add("good"); $("bNote").textContent = `${cur[0]} + ${cur[2]} → ${cur[3]}`; hud(); setTimeout(next, 700); }
+    else { score = Math.max(0, score - 5); flash(el, "shake"); el.classList.add("gone"); $("bNote").textContent = "Not this one: −5"; hud(); }
+  }
+  gameT = setInterval(() => { left--; $("bTime").textContent = left + " s"; $("bBar").style.width = (left / 60 * 100) + "%"; if (left <= 0) gameOver(g, score, "Time is up!"); }, 1000);
+  hud(); next();
+}
+const GSTART = { drop: dropGame, match: matchGame, conn: connGame, build: buildGame };
+const GHOW = {
+  drop: "English words fall down. Drag each word into the basket with the right German meaning before it lands, or tap the basket. It gets faster. You have 3 lives.",
+  match: "Two boards with 6 pairs each. Drag an English word onto its German meaning. Wrong pairs cost 3 seconds. Be fast!",
+  conn: "Two boards with 6 pairs each. Put the words together that belong together, e.g. book + accommodation. Wrong pairs cost 3 seconds.",
+  build: "60 seconds. Drag the right ending onto the word to make a new word, e.g. pollute + -ion = pollution. Right +10, wrong −5."
+};
+function openGame(id) { const g = GAMES.find(x => x.id === id); gameIntro(g, GHOW[id], () => GSTART[id]()); }
+
+const GTABS = GAMES.map(g => ({ id: "g_" + g.id, name: g.name, game: true, low: g.low, val: u => (u.games || {})[g.id] || 0, fmt: g.fmt }));
 let later = false; try { later = sessionStorage.getItem("app-10c-later") === "1"; } catch (e) {}
 drawTop(); resetIdle(); if (me || later) home(); else joinScreen();
 window.addEventListener("load", () => { watchReset(); });
