@@ -660,7 +660,7 @@ const TABS = [
 ];
 function offRank() { if (rankRef) { rankRef.off(); rankRef = null; } }
 function rankScreen() {
-  if (!me) return joinScreen();
+  if (!me && !teacher) return joinScreen();
   mode = "rank"; stopSpeed(); offRank();
   shell("Ranking", `<div class="tabs" role="tablist">${TABS.map(t => `<button type="button" role="tab" class="tab${t.id === rankTab ? " on" : ""}" data-t="${t.id}" aria-selected="${t.id === rankTab}">${t.name}</button>`).join("")}</div>
     <ol class="rank" id="rankList"><li class="note">Loading …</li></ol>
@@ -694,7 +694,7 @@ function drawRank() {
 }
 async function teacherLogin() {
   const c = prompt("Teacher code");
-  if (c && await sha(normCode(c)) === TEACHER_HASH) { teacher = true; try { sessionStorage.setItem("app-10c-teacher", "1"); } catch (e) {} if (mode === "rank") drawRank(); }
+  if (c && await sha(normCode(c)) === TEACHER_HASH) { teacher = true; try { sessionStorage.setItem("app-10c-teacher", "1"); } catch (e) {} rankScreen(); }
 }
 if (new URLSearchParams(location.search).has("teacher") && !teacher) setTimeout(teacherLogin, 400);
 
