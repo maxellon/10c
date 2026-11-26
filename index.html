@@ -608,7 +608,7 @@ const ROOT = "app10c";
 const CLASS_HASH = "99899a5017a8e0e6ed218de49bc6dd36d0dc6f37ab8ea862a267bdbff4a5716e";
 const TEACHER_HASH = "d0bb06b3bae164c72b38079eafc12c91c9cb82bc52665d91293652901a7f6e10";
 const ME_KEY = "app-10c-me", CLASS_KEY = "app-10c-class";
-let classOk = false; try { classOk = localStorage.getItem(CLASS_KEY) === "1" || !!localStorage.getItem(ME_KEY); } catch (e) {}
+let classOk = true; // class code switched off for now (set to false to ask for it again)
 let db = null, me = null, syncT = null, rankRef = null, rankTab = "xp", teacher = false;
 try { me = JSON.parse(localStorage.getItem(ME_KEY)); } catch (e) {}
 try { teacher = sessionStorage.getItem("app-10c-teacher") === "1"; } catch (e) {}
