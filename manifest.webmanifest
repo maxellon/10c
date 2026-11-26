@@ -1,7 +1,7 @@
 {
   "name": "10c",
   "short_name": "10c",
-  "description": "Vocabulary trainer for class 10c",
+  "description": "English app for class 10c",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

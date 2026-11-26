@@ -178,6 +178,49 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .affixes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .affixes .gchip { font-size: 20px; padding: 12px 18px; min-width: 76px; }
 .tabs.games { margin-top: -8px; }
+.tile.big { min-height: 0; padding: 20px; }
+.tile.big .ic { width: 56px; height: 56px; border-radius: 18px; }
+.tile.big .txt b { font-size: 22px; }
+.livebar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; background: #1F1E1D; color: #FFFFFF; border-radius: 18px; padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.livebar .lb-live { background: #E4664A; border-radius: 8px; padding: 2px 8px; font-weight: 800; letter-spacing: 1px; font-size: 12px; animation: blink 1.6s infinite; }
+@keyframes blink { 50% { opacity: .55; } }
+.livebar .lb-team { border-radius: 8px; padding: 2px 8px; font-weight: 800; }
+.livebar .lb-score b { font-family: var(--display); font-size: 18px; }
+.livebar .lb-time { margin-left: auto; font-family: var(--display); font-size: 18px; font-variant-numeric: tabular-nums; }
+.lwait { display: flex; flex-direction: column; gap: 4px; background: var(--bg2); border-radius: 18px; padding: 18px; text-align: center; }
+.lwait b { font-family: var(--display); font-size: 24px; }
+.lwait span { color: var(--soft); }
+.lteam { color: #FFFFFF; border-radius: 22px; padding: 22px; text-align: center; display: flex; flex-direction: column; }
+.lteam small { font-weight: 600; opacity: .85; }
+.lteam b { font-family: var(--display); font-size: clamp(30px, 9vw, 44px); line-height: 1.1; }
+.lscore { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lscore div { background: var(--bg2); border-radius: 18px; padding: 12px; text-align: center; display: flex; flex-direction: column; }
+.lscore small { color: var(--soft); font-weight: 600; }
+.lscore b { font-family: var(--display); font-size: 36px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+body.wide .wrap { max-width: 1500px; }
+body.wide .foot { display: none; }
+.tcode { display: flex; flex-direction: column; align-items: center; background: #1F1E1D; color: #FFFFFF; border-radius: 24px; padding: 18px; }
+.tcode small { font-weight: 600; opacity: .75; font-size: 18px; }
+.tcode b { font-family: var(--display); font-size: clamp(64px, 12vw, 140px); letter-spacing: 10px; line-height: 1; }
+.tcode span { font-weight: 700; font-size: 18px; }
+.lnames { display: flex; flex-wrap: wrap; gap: 8px; }
+.lname { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 18px; }
+.tgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.tcol { display: flex; flex-direction: column; gap: 8px; }
+.thead { color: #FFFFFF; border-radius: 20px; padding: 14px 18px; display: flex; flex-direction: column; }
+.thead.dark { background: #1F1E1D; }
+.thead span { font-weight: 700; font-size: 18px; }
+.thead b { font-family: var(--display); font-size: clamp(44px, 6vw, 84px); line-height: 1; font-variant-numeric: tabular-nums; }
+.thead small { opacity: .85; font-weight: 600; }
+.tbar { height: 14px; background: var(--bg2); border-radius: 99px; overflow: hidden; }
+.tbar i { display: block; height: 100%; border-radius: 99px; transition: width .6s ease; }
+.tlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tlist li { display: flex; justify-content: space-between; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; font-size: 18px; font-weight: 600; }
+.tlist b { font-family: var(--display); font-variant-numeric: tabular-nums; }
+.tdot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.ttop { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.tclock { font-family: var(--display); font-weight: 700; font-size: clamp(48px, 7vw, 96px); line-height: 1; font-variant-numeric: tabular-nums; margin-right: auto; }
+.twin { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 5vw, 64px); line-height: 1.1; margin-right: auto; color: var(--coral); }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
 @media (prefers-reduced-motion: reduce) { .pop, .shake { animation: none; } .tile, .xpbar i, .timer i { transition: none; } }
 </style>
@@ -191,6 +234,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     <div class="brand"><h1>10c</h1><div class="unit" id="unitName"></div></div>
     <span class="chip" title="Days in a row"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--coral)" d="M12 2c1 3.5 4.5 5.5 4.5 10a4.5 4.5 0 0 1-9 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3.5-1-6 .5-8.5z"/></svg><span id="days">0</span></span>
   </div>
+  <div id="liveBar" class="livebar" hidden></div>
   <main id="app"></main>
   <div class="foot"><span id="resetBox" class="confirm"></span></div>
 </div>
@@ -313,6 +357,8 @@ const ICONS = {
   ok: '<circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
   no: '<circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"/>',
   trophy: '<path d="M7 4h10v4a5 5 0 0 1-10 0z" fill="currentColor"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 13v4M8 20h8M9.5 17h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  home: '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" fill="currentColor"/>',
+  live: '<circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   speaker: '<path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
 };
 const svg = (name, extra = "") => `<svg viewBox="0 0 24 24" aria-hidden="true" ${extra}>${ICONS[name]}</svg>`;
@@ -368,7 +414,7 @@ function award(en, ok, xp, rank = true) {
   } else combo = 0;
   st.done++; save(); drawTop();
 }
-function drawTop() { $("days").textContent = st.days; $("unitName").textContent = "Vokabel App · Unit: " + UNIT; }
+function drawTop() { $("days").textContent = st.days; $("unitName").textContent = "English App · Unit: " + UNIT; }
 
 function speak(text) {
   try { const u = new SpeechSynthesisUtterance(plain(text)); u.lang = "en-GB"; u.rate = 0.9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
@@ -376,7 +422,7 @@ function speak(text) {
 
 // ---------- home ----------
 function home() {
-  mode = "home"; stopSpeed(); offRank(); stopGame();
+  mode = "home"; stopSpeed(); offRank(); stopGame(); document.body.classList.remove("wide");
   const lv = Math.min(LEVELS.length - 1, Math.floor(st.xp / XP_PER_LEVEL)), inLv = st.xp - lv * XP_PER_LEVEL;
   const known = WORDS.filter(w => level(w) === 3).length;
   const goal = Math.min(1, st.done / DAILY_GOAL), C = 2 * Math.PI * 40;
@@ -390,6 +436,7 @@ function home() {
         <div class="stats"><span class="chip">${st.xp} XP</span><span class="chip">${known}/${WORDS.length} words</span><span class="chip">Best speed: ${st.best}</span></div></div>
     </section>
     <button class="tile wide" type="button" id="goSpeed"><span class="ic" style="background:var(--coral)">${svg("speed")}</span><span class="txt"><b>Speed round</b><span>60 seconds · 2 XP per answer · record +10 XP</span></span></button>
+    <button class="tile wide" type="button" id="goLessonH"><span class="ic" style="background:#1F1E1D">${svg("live")}</span><span class="txt"><b>Lesson</b><span>Live challenge in class</span></span></button>
     <button class="tile wide" type="button" id="goRank"><span class="ic" style="background:var(--sun)">${svg("trophy")}</span><span class="txt"><b>Ranking</b><span>${me ? "See where you are in the 10c" : "Sign in and compete with the 10c"}</span></span></button>
     <div class="sec">Practise</div>
     <div class="grid" id="tiles"></div>
@@ -408,6 +455,7 @@ function home() {
   });
   $("goSpeed").addEventListener("click", () => start("speed"));
   $("goRank").addEventListener("click", rankScreen);
+  $("goLessonH").addEventListener("click", () => lessonScreen());
   window.scrollTo(0, 0);
 }
 function start(id) { mode = id; combo = 0; if (id === "speed") startSpeed(); else RENDER[id](); window.scrollTo(0, 0); }
@@ -600,7 +648,7 @@ function weekKey(d = new Date()) {
   t.setUTCDate(t.getUTCDate() + 4 - day); const y = t.getUTCFullYear();
   return y + "-W" + Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7);
 }
-function addXP(n) { const wk = weekKey(); if (st.wk !== wk) { st.wk = wk; st.wxp = 0; } st.xp += n; st.wxp += n; }
+function addXP(n) { const wk = weekKey(); if (st.wk !== wk) { st.wk = wk; st.wxp = 0; } st.xp += n; st.wxp += n; liveAddXP(n); }
 function streakNow(u) { const y = new Date(); y.setDate(y.getDate() - 1); return (u.last === dayStr() || u.last === dayStr(y)) ? (u.days || 0) : 0; }
 
 function getDb() {
@@ -689,7 +737,7 @@ async function doJoin() {
   me = { id, name: snap && snap.name ? snap.name : name };
   try { localStorage.setItem(ME_KEY, JSON.stringify(me)); } catch (e) {}
   try { await ref.update(Object.assign(payload(), { pin: ph })); } catch (e) { me = null; try { localStorage.removeItem(ME_KEY); } catch (x) {} return fail("Saving did not work. Try again later."); }
-  save(); drawTop(); resetIdle(); confetti(); rankScreen();
+  save(); drawTop(); resetIdle(); confetti(); const nx = afterJoin || rankScreen; afterJoin = null; nx();
 }
 
 // ---------- ranking ----------
@@ -737,7 +785,7 @@ function drawRank() {
 }
 async function teacherLogin() {
   const c = prompt("Teacher code");
-  if (c && await sha(normCode(c)) === TEACHER_HASH) { teacher = true; try { sessionStorage.setItem("app-10c-teacher", "1"); } catch (e) {} rankScreen(); }
+  if (c && await sha(normCode(c)) === TEACHER_HASH) { teacher = true; try { sessionStorage.setItem("app-10c-teacher", "1"); } catch (e) {} teacherHome(); }
 }
 if (new URLSearchParams(location.search).has("teacher") && !teacher) setTimeout(teacherLogin, 400);
 
@@ -983,8 +1031,192 @@ function openGame(id) { const g = GAMES.find(x => x.id === id); gameIntro(g, GHO
 
 const GTABS = GAMES.map(g => ({ id: "g_" + g.id, name: g.name, game: true, low: g.low, val: u => (u.games || {})[g.id] || 0, fmt: g.fmt }));
 let later = false; try { later = localStorage.getItem("app-10c-later") === "1" || sessionStorage.getItem("app-10c-later") === "1"; } catch (e) {}
-drawTop(); resetIdle(); if (me || later) home(); else joinScreen();
-window.addEventListener("load", () => { watchReset(); });
+// ---------- start choice: Home or Lesson ----------
+function startScreen() {
+  mode = "start"; stopSpeed(); offRank(); stopGame(); document.body.classList.remove("wide");
+  $("app").innerHTML = `<section class="play pop"><p class="prompt" style="font-size:28px">Where are you today?</p>
+    <button class="tile wide big" type="button" id="goHome"><span class="ic" style="background:var(--lime)">${svg("home")}</span><span class="txt"><b>Home</b><span>Practise vocabulary and play</span></span></button>
+    <button class="tile wide big" type="button" id="goLesson"><span class="ic" style="background:var(--coral)">${svg("live")}</span><span class="txt"><b>Lesson</b><span>Live challenge in class</span></span></button></section>`;
+  $("goHome").addEventListener("click", () => { if (me || later) home(); else joinScreen(); });
+  $("goLesson").addEventListener("click", () => { if (me) lessonScreen(); else { afterJoin = lessonScreen; joinScreen(); } });
+}
+let afterJoin = null;
+
+// ---------- live lesson ----------
+const LIVE = ROOT + "/live";
+const TEAMS = { A: { name: "Team London", short: "London", color: "#E4664A" }, B: { name: "Team New York", short: "New York", color: "#2C7FC0" } };
+const live = { cur: null, players: {}, joinedId: null, xp: 0, refs: [], saveT: null };
+try { const j = JSON.parse(localStorage.getItem("app-10c-live")); if (j) { live.joinedId = j.id; live.xp = j.xp || 0; } } catch (e) {}
+const liveStore = () => { try { localStorage.setItem("app-10c-live", JSON.stringify({ id: live.joinedId, xp: live.xp })); } catch (e) {} };
+const inLive = () => !!(me && live.cur && live.joinedId === live.cur.id && live.players[me.id]);
+const liveRunning = () => inLive() && live.cur.state === "running" && (!live.cur.ends || Date.now() < live.cur.ends);
+function liveAddXP(n) {
+  if (!liveRunning() || !n) return;
+  live.xp += n; liveStore();
+  clearTimeout(live.saveT);
+  live.saveT = setTimeout(() => { const d = getDb(); if (d && me) d.ref(LIVE + "/players/" + me.id + "/xp").set(live.xp).catch(() => {}); }, 400);
+}
+function liveWatch() {
+  const d = getDb(); if (!d || live.refs.length) return;
+  const r1 = d.ref(LIVE + "/current"), r2 = d.ref(LIVE + "/players");
+  r1.on("value", s => { live.cur = s.val(); liveUpdate(true); }, () => {});
+  r2.on("value", s => { live.players = s.val() || {}; if (me && live.players[me.id] && live.cur && live.joinedId === live.cur.id) live.xp = Math.max(live.xp, live.players[me.id].xp || 0); liveUpdate(false); }, () => {});
+  live.refs = [r1, r2];
+}
+function liveUpdate(stateChanged) {
+  liveBar();
+  if (mode === "lesson") lessonScreen(true);
+  if (mode === "liveT") liveTeacher(true);
+  if (teacher && live.cur) liveDuties();
+}
+function teamStats() {
+  const t = { A: { xp: 0, n: 0, list: [] }, B: { xp: 0, n: 0, list: [] } }, all = [];
+  Object.entries(live.players).forEach(([id, p]) => {
+    if (!p || !p.name) return; const r = { id, name: p.name, team: p.team, xp: p.xp || 0 }; all.push(r);
+    if (t[p.team]) { t[p.team].xp += r.xp; t[p.team].n++; t[p.team].list.push(r); }
+  });
+  all.sort((a, b) => b.xp - a.xp || a.name.localeCompare(b.name));
+  t.A.list.sort((a, b) => b.xp - a.xp); t.B.list.sort((a, b) => b.xp - a.xp);
+  return { t, all };
+}
+const leftStr = () => { if (!live.cur || !live.cur.ends) return ""; const s = Math.max(0, Math.round((live.cur.ends - Date.now()) / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+function liveBar() {
+  const bar = $("liveBar"); if (!bar) return;
+  if (!inLive() || live.cur.state === "lobby" && !live.players[me.id].team) { bar.hidden = true; return; }
+  const p = live.players[me.id], tm = TEAMS[p.team], { t, all } = teamStats(), rank = all.findIndex(r => r.id === me.id) + 1;
+  bar.hidden = false;
+  const state = live.cur.state === "running" ? `<span class="lb-time" id="lbTime">${leftStr()}</span>` : live.cur.state === "lobby" ? "<span>Wait for the start</span>" : "<span>Finished</span>";
+  bar.innerHTML = `<span class="lb-live">LIVE</span>${tm ? `<span class="lb-team" style="background:${tm.color}">${tm.short}</span>` : ""}
+    <span class="lb-score"><b style="color:${TEAMS.A.color}">${t.A.xp}</b> : <b style="color:${TEAMS.B.color}">${t.B.xp}</b></span><span>You ${live.xp} XP · #${rank}</span>${state}`;
+}
+setInterval(() => {
+  if ($("lbTime")) $("lbTime").textContent = leftStr();
+  if ($("ltTime")) $("ltTime").textContent = leftStr();
+  if ($("lsTime")) $("lsTime").textContent = leftStr();
+  if (teacher && live.cur) liveDuties();
+}, 1000);
+
+function lessonScreen(refresh) {
+  if (!me) { afterJoin = lessonScreen; return joinScreen(); }
+  if (refresh && mode !== "lesson") return;
+  if (refresh && $("lCode") && live.cur && live.cur.state !== "ended" && !inLive()) return;
+  if (!refresh) { stopSpeed(); offRank(); stopGame(); }
+  mode = "lesson"; document.body.classList.remove("wide");
+  liveWatch();
+  const c = live.cur, joined = inLive();
+  let body;
+  if (!getDb()) body = `<p class="note">No connection. The lesson area needs internet.</p>`;
+  else if (!c || (c.state === "ended" && !joined)) body = `<div class="lwait"><b>No live session right now.</b><span>Wait for your teacher to start one.</span></div>`;
+  else if (!joined) body = `<p class="note">Enter the code from the board.</p>
+    <div class="row"><input class="inp pin" id="lCode" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"><button class="btn go" type="button" id="lJoin">Join</button></div><p class="note" id="lErr"></p>`;
+  else {
+    const p = live.players[me.id], tm = TEAMS[p.team], { t, all } = teamStats(), rank = all.findIndex(r => r.id === me.id) + 1;
+    const teamCard = tm ? `<div class="lteam" style="background:${tm.color}"><small>You are in</small><b>${tm.name}</b></div>` : `<div class="lwait"><b>You are in!</b><span>Your teacher is making the teams …</span></div>`;
+    const score = tm ? `<div class="lscore"><div><small>${TEAMS.A.name}</small><b style="color:${TEAMS.A.color}">${t.A.xp}</b></div><div><small>${TEAMS.B.name}</small><b style="color:${TEAMS.B.color}">${t.B.xp}</b></div></div>` : "";
+    if (c.state === "lobby") body = teamCard + (tm ? `<p class="note center">Wait for the start. Then collect as many XP as you can for your team.</p>` : "");
+    else if (c.state === "running") body = teamCard + `<div class="big" id="lsTime">${leftStr()}</div>` + score +
+      `<p class="note center">You: <b>${live.xp} XP</b> · place ${rank} of ${all.length}</p><button class="btn go" type="button" id="lGo">Go and collect XP!</button><p class="note center">All exercises count. Flashcards and games give no XP.</p>`;
+    else { const win = t.A.xp === t.B.xp ? "It's a draw!" : (t.A.xp > t.B.xp ? TEAMS.A.name : TEAMS.B.name) + " wins!";
+      body = `<div class="lwait"><b>${win}</b></div>` + score + `<p class="note center">You: <b>${live.xp} XP</b> · place ${rank} of ${all.length}</p>`; }
+  }
+  const keep = $("lCode") ? $("lCode").value : "";
+  shell("Lesson", body);
+  if ($("lCode")) { $("lCode").value = keep; $("lJoin").addEventListener("click", liveJoin); $("lCode").addEventListener("keydown", e => { if (e.key === "Enter") liveJoin(); }); if (!refresh) $("lCode").focus(); }
+  if ($("lGo")) $("lGo").addEventListener("click", home);
+}
+async function liveJoin() {
+  const v = $("lCode").value.trim(), c = live.cur, d = getDb();
+  if (!c || !d) return;
+  if (v !== String(c.code)) { $("lErr").textContent = "Wrong code. Look at the board."; return; }
+  const ex = live.players[me.id];
+  live.joinedId = c.id; live.xp = ex ? ex.xp || 0 : 0; liveStore();
+  await d.ref(LIVE + "/players/" + me.id).update({ name: me.name, xp: live.xp, t: Date.now() });
+  lessonScreen();
+}
+
+// ---------- teacher: live view for the board ----------
+function teacherHome() {
+  stopSpeed(); offRank(); stopGame(); mode = "tHome"; document.body.classList.remove("wide");
+  shell("Teacher", `<button class="tile wide big" type="button" id="tLive"><span class="ic" style="background:var(--coral)">${svg("live")}</span><span class="txt"><b>Live lesson</b><span>Teams, live score, view for the board</span></span></button>
+    <button class="tile wide big" type="button" id="tRank"><span class="ic" style="background:var(--sun)">${svg("trophy")}</span><span class="txt"><b>Manage ranking</b><span>PIN reset, delete names</span></span></button>`);
+  $("tLive").addEventListener("click", () => liveTeacher());
+  $("tRank").addEventListener("click", rankScreen);
+}
+let liveDur = 10;
+async function liveNew() {
+  const d = getDb(); if (!d) return;
+  await d.ref(LIVE + "/players").remove();
+  await d.ref(LIVE + "/current").set({ id: Date.now(), code: String(1000 + Math.floor(Math.random() * 9000)), state: "lobby", drawn: false });
+}
+async function liveDraw() {
+  const d = getDb(), ids = shuffle(Object.keys(live.players)), upd = {};
+  const first = Math.random() < 0.5 ? "A" : "B", other = first === "A" ? "B" : "A";
+  ids.forEach((id, i) => { upd[`${LIVE}/players/${id}/team`] = i % 2 === 0 ? first : other; });
+  upd[`${LIVE}/current/drawn`] = true;
+  await d.ref().update(upd);
+}
+async function liveStart() {
+  const d = getDb(); if (!live.cur.drawn) await liveDraw();
+  await d.ref(LIVE + "/current").update({ state: "running", ends: liveDur ? Date.now() + liveDur * 60000 : null, started: Date.now() });
+}
+let dutyBusy = false;
+function liveDuties() {
+  const c = live.cur, d = getDb(); if (!c || !d || dutyBusy || mode !== "liveT") return;
+  if (c.state === "running" && c.ends && Date.now() >= c.ends) { dutyBusy = true; d.ref(LIVE + "/current/state").set("ended").finally(() => { dutyBusy = false; }); return; }
+  if (c.drawn) {
+    const late = Object.entries(live.players).filter(([, p]) => p && !p.team);
+    if (late.length) {
+      const { t } = teamStats(); let a = t.A.n, b = t.B.n; const upd = {};
+      late.forEach(([id]) => { const tm = a < b ? "A" : b < a ? "B" : (Math.random() < 0.5 ? "A" : "B"); upd[`${LIVE}/players/${id}/team`] = tm; if (tm === "A") a++; else b++; });
+      dutyBusy = true; d.ref().update(upd).finally(() => { dutyBusy = false; });
+    }
+  }
+}
+function liveTeacher(refresh) {
+  if (refresh && mode !== "liveT") return;
+  if (!refresh) { stopSpeed(); offRank(); stopGame(); }
+  mode = "liveT"; document.body.classList.add("wide"); liveWatch();
+  const c = live.cur, { t, all } = teamStats();
+  const names = all.map(r => `<span class="lname" style="${TEAMS[r.team] ? "background:" + TEAMS[r.team].color + ";color:#fff;border-color:transparent" : ""}">${esc(r.name)}</span>`).join("") || `<span class="note">Nobody has joined yet.</span>`;
+  const teamCol = k => { const tm = TEAMS[k], s = t[k], max = Math.max(1, t.A.xp, t.B.xp);
+    return `<div class="tcol"><div class="thead" style="background:${tm.color}"><span>${tm.name}</span><b>${s.xp}</b><small>XP · ${s.n} ${s.n === 1 ? "player" : "players"}${s.n ? " · Ø " + Math.round(s.xp / s.n) + " per player" : ""}</small></div>
+      <div class="tbar"><i style="width:${s.xp / max * 100}%;background:${tm.color}"></i></div>
+      <ol class="tlist">${s.list.map(r => `<li><span>${esc(r.name)}</span><b>${r.xp}</b></li>`).join("")}</ol></div>`; };
+  const indiv = `<div class="tcol"><div class="thead dark"><span>Individual ranking</span><b>${all.length}</b><small>players</small></div>
+    <ol class="tlist">${all.slice(0, 12).map((r, i) => `<li><span><span class="tdot" style="background:${TEAMS[r.team] ? TEAMS[r.team].color : "var(--line)"}"></span>${i + 1}. ${esc(r.name)}</span><b>${r.xp}</b></li>`).join("")}</ol></div>`;
+  let body;
+  if (!c || c.state === "ended" && !all.length) {
+    body = `<div class="lwait"><b>Start a live session</b><span>The students choose “Lesson” in the app and type in the code from the board.</span></div>
+      <div class="row"><button class="btn go" type="button" id="tNew">Start new live session</button></div>`;
+  } else if (c.state === "lobby") {
+    body = `<div class="tcode"><small>Lesson → code</small><b>${c.code}</b><span>${all.length} joined</span></div>
+      <div class="lnames">${names}</div>
+      <div class="row"><button class="btn" type="button" id="tDraw">${c.drawn ? "Draw teams again" : "Draw teams"}</button>
+      <label class="note">Time <select id="tDur" class="btn small">${[5, 10, 15, 20, 30, 0].map(m => `<option value="${m}" ${m === liveDur ? "selected" : ""}>${m ? m + " min" : "no limit"}</option>`).join("")}</select></label>
+      <button class="btn go" type="button" id="tStart">Start challenge</button></div>
+      ${c.drawn ? `<div class="tgrid">${teamCol("A")}${teamCol("B")}</div>` : ""}`;
+  } else {
+    const win = c.state === "ended" ? (t.A.xp === t.B.xp ? "It's a draw!" : (t.A.xp > t.B.xp ? TEAMS.A.name : TEAMS.B.name) + " wins!") : "";
+    body = `<div class="ttop">${c.state === "running" ? `<div class="tclock" id="ltTime">${c.ends ? leftStr() : "LIVE"}</div>` : `<div class="twin">${win}</div>`}
+      <span class="chip">Code ${c.code} · ${all.length} players</span>
+      ${c.state === "running" ? `<button class="btn small" type="button" id="tPlus">+2 min</button><button class="btn small no" type="button" id="tStop">Stop</button>` : `<button class="btn small" type="button" id="tAgain">Continue</button><button class="btn small go" type="button" id="tNew">New session</button>`}</div>
+      <div class="tgrid three">${teamCol("A")}${teamCol("B")}${indiv}</div>`;
+  }
+  shell("Live lesson", body);
+  $("back").onclick = null; $("back").replaceWith($("back").cloneNode(true)); $("back").addEventListener("click", teacherHome);
+  const d = getDb();
+  if ($("tNew")) $("tNew").addEventListener("click", liveNew);
+  if ($("tDraw")) $("tDraw").addEventListener("click", liveDraw);
+  if ($("tDur")) $("tDur").addEventListener("change", e => { liveDur = +e.target.value; });
+  if ($("tStart")) $("tStart").addEventListener("click", liveStart);
+  if ($("tPlus")) $("tPlus").addEventListener("click", () => d.ref(LIVE + "/current/ends").set((c.ends && c.ends > Date.now() ? c.ends : Date.now()) + 120000));
+  if ($("tStop")) $("tStop").addEventListener("click", () => d.ref(LIVE + "/current/state").set("ended"));
+  if ($("tAgain")) $("tAgain").addEventListener("click", () => d.ref(LIVE + "/current").update({ state: "running", ends: liveDur ? Date.now() + liveDur * 60000 : null }));
+}
+
+$("liveBar").addEventListener("click", () => lessonScreen());
+drawTop(); resetIdle(); if (teacher && new URLSearchParams(location.search).has("teacher")) teacherHome(); else startScreen();
+window.addEventListener("load", () => { watchReset(); liveWatch(); });
 </script>
 <script>
 if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); }); }
