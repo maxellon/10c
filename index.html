@@ -559,7 +559,8 @@ const FB_CONFIG = { apiKey: "AIzaSyACL_u2I8L2PaHwUtEaA99EZ9iXBZ3Pol4", authDomai
 const ROOT = "app10c";
 const CLASS_HASH = "99899a5017a8e0e6ed218de49bc6dd36d0dc6f37ab8ea862a267bdbff4a5716e";
 const TEACHER_HASH = "d0bb06b3bae164c72b38079eafc12c91c9cb82bc52665d91293652901a7f6e10";
-const ME_KEY = "app-10c-me";
+const ME_KEY = "app-10c-me", CLASS_KEY = "app-10c-class";
+let classOk = false; try { classOk = localStorage.getItem(CLASS_KEY) === "1" || !!localStorage.getItem(ME_KEY); } catch (e) {}
 let db = null, me = null, syncT = null, rankRef = null, rankTab = "xp", teacher = false;
 try { me = JSON.parse(localStorage.getItem(ME_KEY)); } catch (e) {}
 try { teacher = sessionStorage.getItem("app-10c-teacher") === "1"; } catch (e) {}
@@ -658,7 +659,7 @@ function joinScreen(err = "") {
   mode = "join"; stopSpeed(); offRank();
   $("app").innerHTML = `<section class="play pop join">
     <div class="jhead"><span class="ic" style="background:var(--sun)">${svg("trophy")}</span><div><b>Join the 10c ranking</b><span>Sign in once with your real first name. Your progress counts for the class ranking.</span></div></div>
-    <label class="fld"><span>Class code</span><input class="inp" id="jCode" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    ${classOk ? "" : `<label class="fld"><span>Class code</span><input class="inp" id="jCode" autocomplete="off" autocapitalize="off" spellcheck="false"></label>`}
     <label class="fld"><span>First name</span><input class="inp" id="jName" maxlength="20" autocomplete="given-name" placeholder="e.g. Lena or Lena K."></label>
     <label class="fld"><span>PIN (4 digits)</span><input class="inp pin" id="jPin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" type="password"></label>
     <p class="note">New here? Choose a PIN and remember it. With your name and PIN you can sign in on any phone.</p>
@@ -666,15 +667,15 @@ function joinScreen(err = "") {
     <div class="row"><button class="btn go" type="button" id="go">Join</button><button class="btn" type="button" id="jLater">Practise without ranking</button></div>
   </section>`;
   $("go").addEventListener("click", doJoin);
-  $("jLater").addEventListener("click", () => { try { sessionStorage.setItem("app-10c-later", "1"); } catch (e) {} home(); });
-  ["jCode", "jName", "jPin"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doJoin(); } }));
-  $(err ? "jName" : "jCode").focus();
+  $("jLater").addEventListener("click", () => { try { localStorage.setItem("app-10c-later", "1"); } catch (e) {} home(); });
+  ["jCode", "jName", "jPin"].filter(id => $(id)).forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doJoin(); } }));
+  $(err || classOk ? "jName" : "jCode").focus();
 }
 async function doJoin() {
-  const code = $("jCode").value, name = cleanName($("jName").value), pin = $("jPin").value.trim();
+  const code = $("jCode") ? $("jCode").value : "", name = cleanName($("jName").value), pin = $("jPin").value.trim();
   const btn = $("go"); btn.disabled = true; btn.textContent = "One moment …";
-  const fail = m => { const c = $("jCode").value, n = $("jName").value; joinScreen(m); $("jCode").value = c; $("jName").value = n; };
-  if (await sha(normCode(code)) !== CLASS_HASH) return fail("Wrong class code. Ask your teacher.");
+  const fail = m => { const c = code, n = $("jName").value; joinScreen(m); if ($("jCode")) $("jCode").value = c; $("jName").value = n; };
+  if (!classOk) { if (await sha(normCode(code)) !== CLASS_HASH) return fail("Wrong class code. Ask your teacher."); classOk = true; try { localStorage.setItem(CLASS_KEY, "1"); } catch (e) {} }
   if (!name || !NAME_RE.test(name)) return fail("Please enter only your real first name. You may add the first letter of your surname, e.g. “Lena K.”");
   if (badName(name)) return fail("This name is not allowed. Please use your real first name.");
   if (!/^\d{4}$/.test(pin)) return fail("Your PIN must have exactly 4 digits.");
@@ -981,7 +982,7 @@ const GHOW = {
 function openGame(id) { const g = GAMES.find(x => x.id === id); gameIntro(g, GHOW[id], () => GSTART[id]()); }
 
 const GTABS = GAMES.map(g => ({ id: "g_" + g.id, name: g.name, game: true, low: g.low, val: u => (u.games || {})[g.id] || 0, fmt: g.fmt }));
-let later = false; try { later = sessionStorage.getItem("app-10c-later") === "1"; } catch (e) {}
+let later = false; try { later = localStorage.getItem("app-10c-later") === "1" || sessionStorage.getItem("app-10c-later") === "1"; } catch (e) {}
 drawTop(); resetIdle(); if (me || later) home(); else joinScreen();
 window.addEventListener("load", () => { watchReset(); });
 </script>
