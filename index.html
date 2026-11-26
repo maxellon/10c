@@ -207,7 +207,9 @@ body.wide .foot { display: none; }
 .lname { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 18px; }
 .tgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
 .tcol { display: flex; flex-direction: column; gap: 8px; }
-.thead { color: #FFFFFF; border-radius: 20px; padding: 14px 18px; display: flex; flex-direction: column; }
+.temoji { position: absolute; right: 16px; top: 8px; font-size: clamp(48px, 6vw, 88px); line-height: 1; }
+.lemoji { font-size: 64px; line-height: 1; }
+.thead { position: relative; color: #FFFFFF; border-radius: 20px; padding: 14px 18px; display: flex; flex-direction: column; }
 .thead.dark { background: #1F1E1D; }
 .thead span { font-weight: 700; font-size: 18px; }
 .thead b { font-family: var(--display); font-size: clamp(44px, 6vw, 84px); line-height: 1; font-variant-numeric: tabular-nums; }
@@ -1044,7 +1046,17 @@ let afterJoin = null;
 
 // ---------- live lesson ----------
 const LIVE = ROOT + "/live";
-const TEAMS = { A: { name: "Team London", short: "London", color: "#E4664A" }, B: { name: "Team New York", short: "New York", color: "#2C7FC0" } };
+const TEAMSETS = [
+  ["🦈", "Sharks", "🦅", "Eagles"], ["🦁", "Lions", "🐺", "Wolves"], ["🐙", "Octopuses", "🦖", "Dinos"], ["🐧", "Penguins", "🦩", "Flamingos"],
+  ["🦊", "Foxes", "🦉", "Owls"], ["🐻", "Bears", "🐯", "Tigers"], ["🦄", "Unicorns", "🐉", "Dragons"], ["🐬", "Dolphins", "🦀", "Crabs"],
+  ["🦍", "Gorillas", "🐊", "Crocodiles"], ["🐝", "Bees", "🦎", "Lizards"], ["🦘", "Kangaroos", "🐨", "Koalas"], ["🦒", "Giraffes", "🦓", "Zebras"],
+  ["🐼", "Pandas", "🦥", "Sloths"], ["🦬", "Buffaloes", "🐎", "Horses"], ["🐸", "Frogs", "🦆", "Ducks"], ["🦂", "Scorpions", "🕷️", "Spiders"]
+];
+function TM() {
+  const z = (live.cur && live.cur.teams) || TEAMSETS[0];
+  return { A: { name: z[0] + " " + z[1], short: z[0] + " " + z[1], emoji: z[0], color: "#E4664A" }, B: { name: z[2] + " " + z[3], short: z[2] + " " + z[3], emoji: z[2], color: "#2C7FC0" } };
+}
+const pickTeams = () => { const prev = live.cur && live.cur.teams ? live.cur.teams[1] : ""; let z; do { z = rnd(TEAMSETS); } while (z[1] === prev); return Math.random() < 0.5 ? z : [z[2], z[3], z[0], z[1]]; };
 const live = { cur: null, players: {}, joinedId: null, xp: 0, refs: [], saveT: null };
 try { const j = JSON.parse(localStorage.getItem("app-10c-live")); if (j) { live.joinedId = j.id; live.xp = j.xp || 0; } } catch (e) {}
 const liveStore = () => { try { localStorage.setItem("app-10c-live", JSON.stringify({ id: live.joinedId, xp: live.xp })); } catch (e) {} };
@@ -1083,11 +1095,11 @@ const leftStr = () => { if (!live.cur || !live.cur.ends) return ""; const s = Ma
 function liveBar() {
   const bar = $("liveBar"); if (!bar) return;
   if (!inLive() || live.cur.state === "lobby" && !live.players[me.id].team) { bar.hidden = true; return; }
-  const p = live.players[me.id], tm = TEAMS[p.team], { t, all } = teamStats(), rank = all.findIndex(r => r.id === me.id) + 1;
+  const p = live.players[me.id], tm = TM()[p.team], { t, all } = teamStats(), rank = all.findIndex(r => r.id === me.id) + 1;
   bar.hidden = false;
   const state = live.cur.state === "running" ? `<span class="lb-time" id="lbTime">${leftStr()}</span>` : live.cur.state === "lobby" ? "<span>Wait for the start</span>" : "<span>Finished</span>";
   bar.innerHTML = `<span class="lb-live">LIVE</span>${tm ? `<span class="lb-team" style="background:${tm.color}">${tm.short}</span>` : ""}
-    <span class="lb-score"><b style="color:${TEAMS.A.color}">${t.A.xp}</b> : <b style="color:${TEAMS.B.color}">${t.B.xp}</b></span><span>You ${live.xp} XP · #${rank}</span>${state}`;
+    <span class="lb-score"><b style="color:${TM().A.color}">${t.A.xp}</b> : <b style="color:${TM().B.color}">${t.B.xp}</b></span><span>You ${live.xp} XP · #${rank}</span>${state}`;
 }
 setInterval(() => {
   if ($("lbTime")) $("lbTime").textContent = leftStr();
@@ -1110,13 +1122,13 @@ function lessonScreen(refresh) {
   else if (!joined) body = `<p class="note">Enter the code from the board.</p>
     <div class="row"><input class="inp pin" id="lCode" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"><button class="btn go" type="button" id="lJoin">Join</button></div><p class="note" id="lErr"></p>`;
   else {
-    const p = live.players[me.id], tm = TEAMS[p.team], { t, all } = teamStats(), rank = all.findIndex(r => r.id === me.id) + 1;
-    const teamCard = tm ? `<div class="lteam" style="background:${tm.color}"><small>You are in</small><b>${tm.name}</b></div>` : `<div class="lwait"><b>You are in!</b><span>Your teacher is making the teams …</span></div>`;
-    const score = tm ? `<div class="lscore"><div><small>${TEAMS.A.name}</small><b style="color:${TEAMS.A.color}">${t.A.xp}</b></div><div><small>${TEAMS.B.name}</small><b style="color:${TEAMS.B.color}">${t.B.xp}</b></div></div>` : "";
+    const p = live.players[me.id], tm = TM()[p.team], { t, all } = teamStats(), rank = all.findIndex(r => r.id === me.id) + 1;
+    const teamCard = tm ? `<div class="lteam" style="background:${tm.color}"><span class="lemoji">${tm.emoji}</span><small>You are in team</small><b>${tm.name.replace(tm.emoji + " ", "")}</b></div>` : `<div class="lwait"><b>You are in!</b><span>Your teacher is making the teams …</span></div>`;
+    const score = tm ? `<div class="lscore"><div><small>${TM().A.name}</small><b style="color:${TM().A.color}">${t.A.xp}</b></div><div><small>${TM().B.name}</small><b style="color:${TM().B.color}">${t.B.xp}</b></div></div>` : "";
     if (c.state === "lobby") body = teamCard + (tm ? `<p class="note center">Wait for the start. Then collect as many XP as you can for your team.</p>` : "");
     else if (c.state === "running") body = teamCard + `<div class="big" id="lsTime">${leftStr()}</div>` + score +
       `<p class="note center">You: <b>${live.xp} XP</b> · place ${rank} of ${all.length}</p><button class="btn go" type="button" id="lGo">Go and collect XP!</button><p class="note center">All exercises count. Flashcards and games give no XP.</p>`;
-    else { const win = t.A.xp === t.B.xp ? "It's a draw!" : (t.A.xp > t.B.xp ? TEAMS.A.name : TEAMS.B.name) + " wins!";
+    else { const win = t.A.xp === t.B.xp ? "It's a draw!" : (t.A.xp > t.B.xp ? TM().A.name : TM().B.name) + " win!";
       body = `<div class="lwait"><b>${win}</b></div>` + score + `<p class="note center">You: <b>${live.xp} XP</b> · place ${rank} of ${all.length}</p>`; }
   }
   const keep = $("lCode") ? $("lCode").value : "";
@@ -1146,7 +1158,7 @@ let liveDur = 10;
 async function liveNew() {
   const d = getDb(); if (!d) return;
   await d.ref(LIVE + "/players").remove();
-  await d.ref(LIVE + "/current").set({ id: Date.now(), code: String(1000 + Math.floor(Math.random() * 9000)), state: "lobby", drawn: false });
+  await d.ref(LIVE + "/current").set({ id: Date.now(), code: String(1000 + Math.floor(Math.random() * 9000)), state: "lobby", drawn: false, teams: pickTeams() });
 }
 async function liveDraw() {
   const d = getDb(), ids = shuffle(Object.keys(live.players)), upd = {};
@@ -1177,13 +1189,13 @@ function liveTeacher(refresh) {
   if (!refresh) { stopSpeed(); offRank(); stopGame(); }
   mode = "liveT"; document.body.classList.add("wide"); liveWatch();
   const c = live.cur, { t, all } = teamStats();
-  const names = all.map(r => `<span class="lname" style="${TEAMS[r.team] ? "background:" + TEAMS[r.team].color + ";color:#fff;border-color:transparent" : ""}">${esc(r.name)}</span>`).join("") || `<span class="note">Nobody has joined yet.</span>`;
-  const teamCol = k => { const tm = TEAMS[k], s = t[k], max = Math.max(1, t.A.xp, t.B.xp);
-    return `<div class="tcol"><div class="thead" style="background:${tm.color}"><span>${tm.name}</span><b>${s.xp}</b><small>XP · ${s.n} ${s.n === 1 ? "player" : "players"}${s.n ? " · Ø " + Math.round(s.xp / s.n) + " per player" : ""}</small></div>
+  const names = all.map(r => `<span class="lname" style="${TM()[r.team] ? "background:" + TM()[r.team].color + ";color:#fff;border-color:transparent" : ""}">${esc(r.name)}</span>`).join("") || `<span class="note">Nobody has joined yet.</span>`;
+  const teamCol = k => { const tm = TM()[k], s = t[k], max = Math.max(1, t.A.xp, t.B.xp);
+    return `<div class="tcol"><div class="thead" style="background:${tm.color}"><span class="temoji">${tm.emoji}</span><span>${tm.name.replace(tm.emoji + " ", "")}</span><b>${s.xp}</b><small>XP · ${s.n} ${s.n === 1 ? "player" : "players"}${s.n ? " · Ø " + Math.round(s.xp / s.n) + " per player" : ""}</small></div>
       <div class="tbar"><i style="width:${s.xp / max * 100}%;background:${tm.color}"></i></div>
       <ol class="tlist">${s.list.map(r => `<li><span>${esc(r.name)}</span><b>${r.xp}</b></li>`).join("")}</ol></div>`; };
   const indiv = `<div class="tcol"><div class="thead dark"><span>Individual ranking</span><b>${all.length}</b><small>players</small></div>
-    <ol class="tlist">${all.slice(0, 12).map((r, i) => `<li><span><span class="tdot" style="background:${TEAMS[r.team] ? TEAMS[r.team].color : "var(--line)"}"></span>${i + 1}. ${esc(r.name)}</span><b>${r.xp}</b></li>`).join("")}</ol></div>`;
+    <ol class="tlist">${all.slice(0, 12).map((r, i) => `<li><span><span class="tdot" style="background:${TM()[r.team] ? TM()[r.team].color : "var(--line)"}"></span>${i + 1}. ${esc(r.name)}</span><b>${r.xp}</b></li>`).join("")}</ol></div>`;
   let body;
   if (!c || c.state === "ended" && !all.length) {
     body = `<div class="lwait"><b>Start a live session</b><span>The students choose “Lesson” in the app and type in the code from the board.</span></div>
@@ -1191,12 +1203,12 @@ function liveTeacher(refresh) {
   } else if (c.state === "lobby") {
     body = `<div class="tcode"><small>Lesson → code</small><b>${c.code}</b><span>${all.length} joined</span></div>
       <div class="lnames">${names}</div>
-      <div class="row"><button class="btn" type="button" id="tDraw">${c.drawn ? "Draw teams again" : "Draw teams"}</button>
+      <div class="row"><button class="btn" type="button" id="tNames">New team names</button><button class="btn" type="button" id="tDraw">${c.drawn ? "Draw teams again" : "Draw teams"}</button>
       <label class="note">Time <select id="tDur" class="btn small">${[5, 10, 15, 20, 30, 0].map(m => `<option value="${m}" ${m === liveDur ? "selected" : ""}>${m ? m + " min" : "no limit"}</option>`).join("")}</select></label>
       <button class="btn go" type="button" id="tStart">Start challenge</button></div>
       ${c.drawn ? `<div class="tgrid">${teamCol("A")}${teamCol("B")}</div>` : ""}`;
   } else {
-    const win = c.state === "ended" ? (t.A.xp === t.B.xp ? "It's a draw!" : (t.A.xp > t.B.xp ? TEAMS.A.name : TEAMS.B.name) + " wins!") : "";
+    const win = c.state === "ended" ? (t.A.xp === t.B.xp ? "It's a draw!" : (t.A.xp > t.B.xp ? TM().A.name : TM().B.name) + " win!") : "";
     body = `<div class="ttop">${c.state === "running" ? `<div class="tclock" id="ltTime">${c.ends ? leftStr() : "LIVE"}</div>` : `<div class="twin">${win}</div>`}
       <span class="chip">Code ${c.code} · ${all.length} players</span>
       ${c.state === "running" ? `<button class="btn small" type="button" id="tPlus">+2 min</button><button class="btn small no" type="button" id="tStop">Stop</button>` : `<button class="btn small" type="button" id="tAgain">Continue</button><button class="btn small go" type="button" id="tNew">New session</button>`}</div>
@@ -1207,6 +1219,7 @@ function liveTeacher(refresh) {
   const d = getDb();
   if ($("tNew")) $("tNew").addEventListener("click", liveNew);
   if ($("tDraw")) $("tDraw").addEventListener("click", liveDraw);
+  if ($("tNames")) $("tNames").addEventListener("click", () => d.ref(LIVE + "/current/teams").set(pickTeams()));
   if ($("tDur")) $("tDur").addEventListener("change", e => { liveDur = +e.target.value; });
   if ($("tStart")) $("tStart").addEventListener("click", liveStart);
   if ($("tPlus")) $("tPlus").addEventListener("click", () => d.ref(LIVE + "/current/ends").set((c.ends && c.ends > Date.now() ? c.ends : Date.now()) + 120000));
