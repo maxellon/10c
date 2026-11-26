@@ -157,7 +157,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 <canvas id="confetti" aria-hidden="true"></canvas>
 <div class="wrap">
   <div class="top">
-    <svg class="logo" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#1F1E1D"/><path d="M120 150h272a40 40 0 0 1 40 40v130a40 40 0 0 1-40 40H262l-82 62v-62h-60a40 40 0 0 1-40-40V190a40 40 0 0 1 40-40z" fill="#D97757"/><text x="256" y="300" text-anchor="middle" style="font-family:'Space Grotesk',Arial,sans-serif;font-weight:700" font-size="132" letter-spacing="-4" fill="#FAF9F5">10c</text><circle cx="392" cy="142" r="52" fill="#FAF9F5"/><path d="M368 142l17 17 32-34" fill="none" stroke="#1F1E1D" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="logo" viewBox="0 0 512 512" aria-hidden="true"><rect x="6" y="6" width="500" height="500" rx="108" fill="#FFFFFF" stroke="#DDD6CC" stroke-width="12"/><path d="M120 150h272a40 40 0 0 1 40 40v130a40 40 0 0 1-40 40H262l-82 62v-62h-60a40 40 0 0 1-40-40V190a40 40 0 0 1 40-40z" fill="#D97757"/><text x="256" y="300" text-anchor="middle" style="font-family:'Space Grotesk',Arial,sans-serif;font-weight:700" font-size="132" letter-spacing="-4" fill="#FAF9F5">10c</text><circle cx="392" cy="142" r="52" fill="#1F1E1D"/><path d="M368 142l17 17 32-34" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="brand"><h1>10c</h1><div class="unit" id="unitName"></div></div>
     <span class="chip" title="Days in a row"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--coral)" d="M12 2c1 3.5 4.5 5.5 4.5 10a4.5 4.5 0 0 1-9 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3.5-1-6 .5-8.5z"/></svg><span id="days">0</span></span>
   </div>
@@ -531,7 +531,30 @@ async function sha(s) {
 }
 const normCode = s => String(s).toLowerCase().replace(/[\s\-_.]/g, "");
 const slug = s => s.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const cleanName = s => String(s).replace(/\s+/g, " ").trim().split(" ").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+function cleanName(s) {
+  const m = String(s).replace(/\s+/g, " ").trim().match(/^(\S+)(?: (\S)\.?)?$/u);
+  if (!m) return "";
+  const first = m[1].split("-").map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join("-");
+  return first + (m[2] ? " " + m[2].toUpperCase() + "." : "");
+}
+const L = "a-zäöüßáàâãéèêëíìîïóòôõúùûçñ";
+const NAME_RE = new RegExp(`^[${L.toUpperCase().replace("SS", "")}][${L}]{1,14}(-[${L.toUpperCase().replace("SS", "")}][${L}]{1,14})?( [A-ZÄÖÜ]\\.)?$`);
+// blocked: insults, discrimination, sexual words, extremism. BAD_PART also matches inside a name, BAD_WORD only as the whole name part.
+const BAD_PART = ["sex", "porn", "fick", "fuck", "fuk", "bitch", "slut", "whore", "milf", "horny", "boob", "tits", "titten", "pussy", "cunt", "dildo", "pimmel", "penis", "vagina", "muschi", "fotze", "schwanz", "wichs", "wixx", "wixer", "nutte", "hure", "schlampe", "bastard", "arsch", "scheiss", "scheiß", "bullshit", "shithead", "kacke", "pisse", "geil", "nackt", "naked", "nude", "onlyfans", "stripper",
+  "nigg", "nigga", "neger", "negro", "kanake", "zigeuner", "schwuchtel", "faggot", "tranny", "transe", "spast", "behindert", "mongo", "retard", "missgeburt", "krüppel", "kruppel",
+  "hitler", "heilhit", "judensau", "auschwitz", "holocaust", "nsdap", "taliban", "terror", "allahuakbar", "isis"];
+const BAD_WORD = ["anal", "anus", "ass", "cum", "dick", "cock", "hoe", "shit", "tit", "gay", "homo", "lesbe", "fag", "jude", "nazi", "adolf", "heil", "ss", "kz", "opfer", "herr", "frau", "mr", "mrs", "ms", "miss", "sir", "lehrer", "teacher", "admin"];
+const squash = s => s.replace(/(.)\1+/g, "$1");
+const deleet = s => s.replace(/[0]/g, "o").replace(/[1!|]/g, "i").replace(/3/g, "e").replace(/[4@]/g, "a").replace(/[5$]/g, "s").replace(/7/g, "t");
+function badName(n) {
+  const low = deleet(String(n).toLowerCase());
+  const joined = low.replace(/[^a-zäöüßáàâãéèêëíìîïóòôõúùûçñ]/g, "");
+  const alt = joined.replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue");
+  const vs = [joined, squash(joined), alt, squash(alt)];
+  if (BAD_PART.some(b => vs.some(v => v.includes(b) || v.includes(squash(b))))) return true;
+  const words = low.split(/[^a-zäöüßáàâãéèêëíìîïóòôõúùûçñ]+/).filter(Boolean);
+  return words.some(w => BAD_WORD.includes(w) || BAD_WORD.includes(squash(w)));
+}
 function weekKey(d = new Date()) {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7;
   t.setUTCDate(t.getUTCDate() + 4 - day); const y = t.getUTCFullYear();
@@ -573,9 +596,9 @@ function merge(a, b) {
 function joinScreen(err = "") {
   mode = "join"; stopSpeed(); offRank();
   $("app").innerHTML = `<section class="play pop join">
-    <div class="jhead"><span class="ic" style="background:var(--sun)">${svg("trophy")}</span><div><b>Join the 10c ranking</b><span>Sign in once. Your progress counts for the class ranking.</span></div></div>
+    <div class="jhead"><span class="ic" style="background:var(--sun)">${svg("trophy")}</span><div><b>Join the 10c ranking</b><span>Sign in once with your real first name. Your progress counts for the class ranking.</span></div></div>
     <label class="fld"><span>Class code</span><input class="inp" id="jCode" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-    <label class="fld"><span>First name</span><input class="inp" id="jName" maxlength="24" autocomplete="given-name" placeholder="e.g. Lena or Lena K."></label>
+    <label class="fld"><span>First name</span><input class="inp" id="jName" maxlength="20" autocomplete="given-name" placeholder="e.g. Lena or Lena K."></label>
     <label class="fld"><span>PIN (4 digits)</span><input class="inp pin" id="jPin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" type="password"></label>
     <p class="note">New here? Choose a PIN and remember it. With your name and PIN you can sign in on any phone.</p>
     ${err ? `<div class="fb no">${svg("no")}<div>${esc(err)}</div></div>` : ""}
@@ -591,7 +614,8 @@ async function doJoin() {
   const btn = $("go"); btn.disabled = true; btn.textContent = "One moment …";
   const fail = m => { const c = $("jCode").value, n = $("jName").value; joinScreen(m); $("jCode").value = c; $("jName").value = n; };
   if (await sha(normCode(code)) !== CLASS_HASH) return fail("Wrong class code. Ask your teacher.");
-  if (!/^[A-Za-zÄÖÜäöüßÀ-ÿ][A-Za-zÄÖÜäöüßÀ-ÿ .'-]{1,23}$/.test(name)) return fail("Please enter your first name (letters only).");
+  if (!name || !NAME_RE.test(name)) return fail("Please enter only your real first name. You may add the first letter of your surname, e.g. “Lena K.”");
+  if (badName(name)) return fail("This name is not allowed. Please use your real first name.");
   if (!/^\d{4}$/.test(pin)) return fail("Your PIN must have exactly 4 digits.");
   const d = getDb(); if (!d) return fail("No connection. Check your internet and try again.");
   const id = slug(name), ph = await sha(id + ":" + pin), ref = d.ref(ROOT + "/users/" + id);
@@ -629,14 +653,14 @@ let rankData = {};
 function drawRank() {
   const list = $("rankList"); if (!list) return;
   const t = TABS.find(x => x.id === rankTab);
-  const rows = Object.entries(rankData).filter(([, u]) => u && u.name).map(([id, u]) => ({ id, name: u.name, v: t.val(u), u }))
+  const rows = Object.entries(rankData).filter(([, u]) => u && u.name && (teacher || !badName(u.name))).map(([id, u]) => ({ id, name: u.name, v: t.val(u), u, bad: badName(u.name) }))
     .sort((a, b) => b.v - a.v || a.name.localeCompare(b.name));
   let place = 0, prev = null;
   list.innerHTML = rows.map((r, i) => {
     if (r.v !== prev) { place = i + 1; prev = r.v; }
     const medal = r.v > 0 && place <= 3 ? ` m${place}` : "";
     const tools = teacher ? `<span class="tt"><button class="btn small" type="button" data-pin="${esc(r.id)}">PIN reset</button><button class="btn small no" type="button" data-del="${esc(r.id)}">Delete</button></span>` : "";
-    return `<li class="${me && r.id === me.id ? "me" : ""}"><span class="pl${medal}">${place}</span><span class="nm">${esc(r.name)}${me && r.id === me.id ? " <small>(you)</small>" : ""}</span><span class="vl">${t.fmt(r.v)}</span>${tools}</li>`;
+    return `<li class="${me && r.id === me.id ? "me" : ""}"><span class="pl${medal}">${place}</span><span class="nm">${esc(r.name)}${r.bad ? " <small>(hidden: blocked name)</small>" : ""}${me && r.id === me.id ? " <small>(you)</small>" : ""}</span><span class="vl">${t.fmt(r.v)}</span>${tools}</li>`;
   }).join("") || `<li class="note">Nobody is here yet.</li>`;
   $("rankNote").textContent = rankTab === "week" ? "The weekly ranking starts again every Monday." : rankTab === "streak" ? "Days in a row with at least one right answer." : rankTab === "speed" ? "Best score in the 60-second speed round." : "All XP you have collected.";
   if (teacher) {
