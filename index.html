@@ -123,6 +123,31 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 @keyframes pop { 0% { transform: scale(.96); } 60% { transform: scale(1.03); } 100% { transform: scale(1); } }
 .shake { animation: shake .35s ease; }
 @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.join .jhead { display: flex; gap: 14px; align-items: center; }
+.join .jhead .ic { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #FFFFFF; flex: none; }
+.join .jhead .ic svg { width: 30px; height: 30px; }
+.join .jhead b { display: block; font-family: var(--display); font-size: 22px; line-height: 1.15; }
+.join .jhead span { color: var(--soft); font-size: 14px; }
+.fld { display: flex; flex-direction: column; gap: 6px; }
+.fld > span { font-weight: 700; font-size: 14px; color: var(--soft); }
+.fld .inp { flex: none; width: 100%; font-size: 20px; color: var(--ink); }
+.fld .inp.pin { letter-spacing: 8px; max-width: 200px; }
+.tabs { display: flex; gap: 4px; background: var(--bg2); padding: 5px; border-radius: 16px; overflow-x: auto; }
+.tab { flex: 1 1 0; min-width: max-content; background: transparent; padding: 9px 8px; font-weight: 700; font-size: 13px; color: var(--soft); border-radius: 12px; white-space: nowrap; }
+.tab.on { background: var(--card); color: var(--ink); box-shadow: 0 2px 0 var(--line); }
+.who { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; }
+.rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rank li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: var(--bg); border: 1px solid var(--line); flex-wrap: wrap; }
+.rank li.note { border: 0; background: none; }
+.rank li.me { background: var(--lime-bg); border-color: var(--lime); }
+.rank .pl { width: 34px; height: 34px; border-radius: 50%; background: var(--bg2); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; flex: none; font-variant-numeric: tabular-nums; }
+.rank .pl.m1 { background: #E8B526; color: #2B1E00; }
+.rank .pl.m2 { background: #B9BEC8; color: #1F232B; }
+.rank .pl.m3 { background: #C9814A; color: #2A1608; }
+.rank .nm { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+.rank .nm small { font-weight: 500; color: var(--soft); }
+.rank .vl { font-family: var(--display); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank .tt { display: flex; gap: 6px; width: 100%; justify-content: flex-end; }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
 @media (prefers-reduced-motion: reduce) { .pop, .shake { animation: none; } .tile, .xpbar i, .timer i { transition: none; } }
 </style>
@@ -140,6 +165,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   <div class="foot"><span id="resetBox" class="confirm"></span></div>
 </div>
 
+<script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script>
 const WORDS = [
  ["Travel and tourists","backpacker","a person who travels cheaply with a backpack, often for a long time","Rucksacktourist(in)","",""],
@@ -255,6 +282,7 @@ const ICONS = {
   back: '<path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
   ok: '<circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
   no: '<circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"/>',
+  trophy: '<path d="M7 4h10v4a5 5 0 0 1-10 0z" fill="currentColor"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 13v4M8 20h8M9.5 17h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   speaker: '<path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
 };
 const svg = (name, extra = "") => `<svg viewBox="0 0 24 24" aria-hidden="true" ${extra}>${ICONS[name]}</svg>`;
@@ -272,11 +300,11 @@ const MODES = [
 
 let st = load();
 function load() {
-  const base = { lvl: {}, xp: 0, best: 0, dir: "en", today: "", done: 0, days: 0, last: "" };
+  const base = { lvl: {}, xp: 0, best: 0, dir: "en", today: "", done: 0, days: 0, last: "", wk: "", wxp: 0 };
   try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.lvl) return Object.assign(base, s); } catch (e) {}
   return base;
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} try { scheduleSync(); } catch (e) {} }
 function dayStr(d = new Date()) { return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
 (function checkDay() {
   const t = dayStr();
@@ -302,7 +330,7 @@ function award(en, ok, xp) {
   const w = WORDS.find(x => x.en === en);
   if (w) { const l = level(w); st.lvl[en] = ok ? Math.min(3, l + 1) : Math.max(1, l - 1); }
   if (ok) {
-    combo++; st.xp += xp;
+    combo++; addXP(xp);
     const t = dayStr();
     if (st.last !== t) { const y = new Date(); y.setDate(y.getDate() - 1); st.days = st.last === dayStr(y) ? st.days + 1 : 1; st.last = t; }
     if (combo % 5 === 0) confetti();
@@ -317,7 +345,7 @@ function speak(text) {
 
 // ---------- home ----------
 function home() {
-  mode = "home"; stopSpeed();
+  mode = "home"; stopSpeed(); offRank();
   const lv = Math.min(LEVELS.length - 1, Math.floor(st.xp / XP_PER_LEVEL)), inLv = st.xp - lv * XP_PER_LEVEL;
   const known = WORDS.filter(w => level(w) === 3).length;
   const goal = Math.min(1, st.done / DAILY_GOAL), C = 2 * Math.PI * 40;
@@ -331,6 +359,7 @@ function home() {
         <div class="stats"><span class="chip">${st.xp} XP</span><span class="chip">${known}/${WORDS.length} words</span><span class="chip">Best speed: ${st.best}</span></div></div>
     </section>
     <button class="tile wide" type="button" id="goSpeed"><span class="ic" style="background:var(--coral)">${svg("speed")}</span><span class="txt"><b>Speed round</b><span>60 seconds · as many as you can</span></span></button>
+    <button class="tile wide" type="button" id="goRank"><span class="ic" style="background:var(--sun)">${svg("trophy")}</span><span class="txt"><b>Ranking</b><span>${me ? "See where you are in the 10c" : "Sign in and compete with the 10c"}</span></span></button>
     <div class="sec">Practise</div>
     <div class="grid" id="tiles"></div>`;
   MODES.forEach(m => {
@@ -339,6 +368,7 @@ function home() {
     b.addEventListener("click", () => start(m.id)); $("tiles").appendChild(b);
   });
   $("goSpeed").addEventListener("click", () => start("speed"));
+  $("goRank").addEventListener("click", rankScreen);
   window.scrollTo(0, 0);
 }
 function start(id) { mode = id; combo = 0; if (id === "speed") startSpeed(); else RENDER[id](); window.scrollTo(0, 0); }
@@ -457,7 +487,7 @@ function speedQ() {
 function stopSpeed() { if (speed && speed.t) clearInterval(speed.t); speed = null; }
 function endSpeed() {
   const score = speed.score, rec = score > st.best; stopSpeed();
-  if (rec) { st.best = score; st.xp += 20; save(); confetti(); }
+  if (rec) { st.best = score; addXP(20); save(); confetti(); }
   shell("Speed round", `<div class="spacer"></div><p class="note center">Time is up!</p><div class="big">${score}</div><p class="note center">${rec ? "New record! +20 XP" : `Your record: ${st.best}`}</p><div class="spacer"></div>
     <div class="row" style="justify-content:center"><button class="btn go" type="button" id="again">Play again</button><button class="btn" type="button" id="home2">Back to start</button></div>`);
   $("again").addEventListener("click", () => start("speed")); $("home2").addEventListener("click", home);
@@ -477,14 +507,159 @@ function confetti() {
 document.addEventListener("keydown", e => { if (e.key === "Enter" && $("go") && document.activeElement !== $("go") && document.activeElement.tagName !== "INPUT") { e.preventDefault(); $("go").click(); } });
 
 function resetIdle() {
-  $("resetBox").innerHTML = `Progress is saved on this device. <button class="btn small" type="button" id="rs">Start again</button>`;
+  $("resetBox").innerHTML = (me ? `<span class="who"><span>Signed in as <b>${esc(me.name)}</b></span><button class="btn small" type="button" id="so">Sign out</button></span>` : "") + `<span class="who">Progress is saved on this device.<button class="btn small" type="button" id="rs">Start again</button></span>`;
+  if (me) $("so").addEventListener("click", signOut);
   $("rs").addEventListener("click", () => {
     $("resetBox").innerHTML = `Delete all your progress? <button class="btn small no" type="button" id="rsY">Yes, delete</button><button class="btn small" type="button" id="rsN">Cancel</button>`;
-    $("rsY").addEventListener("click", () => { st = Object.assign(load(), { lvl: {}, xp: 0, best: 0, done: 0, days: 0, last: "" }); save(); resetIdle(); drawTop(); home(); });
+    $("rsY").addEventListener("click", () => { st = Object.assign(load(), { lvl: {}, xp: 0, best: 0, done: 0, days: 0, last: "", wk: "", wxp: 0 }); save(); resetIdle(); drawTop(); home(); });
     $("rsN").addEventListener("click", resetIdle);
   });
 }
-drawTop(); resetIdle(); home();
+// ---------- ranking with sign-in (Firebase Realtime Database) ----------
+const FB_CONFIG = { apiKey: "AIzaSyACL_u2I8L2PaHwUtEaA99EZ9iXBZ3Pol4", authDomain: "quiz-de-titte.firebaseapp.com", databaseURL: "https://quiz-de-titte-default-rtdb.europe-west1.firebasedatabase.app", projectId: "quiz-de-titte" };
+const ROOT = "app10c";
+const CLASS_HASH = "99899a5017a8e0e6ed218de49bc6dd36d0dc6f37ab8ea862a267bdbff4a5716e";
+const TEACHER_HASH = "d0bb06b3bae164c72b38079eafc12c91c9cb82bc52665d91293652901a7f6e10";
+const ME_KEY = "app-10c-me";
+let db = null, me = null, syncT = null, rankRef = null, rankTab = "xp", teacher = false;
+try { me = JSON.parse(localStorage.getItem(ME_KEY)); } catch (e) {}
+try { teacher = sessionStorage.getItem("app-10c-teacher") === "1"; } catch (e) {}
+
+async function sha(s) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+const normCode = s => String(s).toLowerCase().replace(/[\s\-_.]/g, "");
+const slug = s => s.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const cleanName = s => String(s).replace(/\s+/g, " ").trim().split(" ").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+function weekKey(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day); const y = t.getUTCFullYear();
+  return y + "-W" + Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7);
+}
+function addXP(n) { const wk = weekKey(); if (st.wk !== wk) { st.wk = wk; st.wxp = 0; } st.xp += n; st.wxp += n; }
+function streakNow(u) { const y = new Date(); y.setDate(y.getDate() - 1); return (u.last === dayStr() || u.last === dayStr(y)) ? (u.days || 0) : 0; }
+
+function getDb() {
+  if (db) return db;
+  if (typeof firebase === "undefined") return null;
+  try { db = (firebase.apps.length ? firebase.app() : firebase.initializeApp(FB_CONFIG)).database(); } catch (e) { db = null; }
+  return db;
+}
+function payload() {
+  const wk = weekKey();
+  return { name: me.name, xp: st.xp, best: st.best, days: st.days, last: st.last, wk: st.wk === wk ? wk : wk, wxp: st.wk === wk ? st.wxp : 0, lvl: st.lvl, t: Date.now() };
+}
+function scheduleSync() {
+  if (!me) return;
+  clearTimeout(syncT);
+  syncT = setTimeout(flushSync, 1500);
+}
+function flushSync() {
+  clearTimeout(syncT); syncT = null;
+  const d = getDb(); if (me && d) d.ref(ROOT + "/users/" + me.id).update(payload()).catch(() => {});
+}
+function merge(a, b) {
+  const wk = weekKey(), out = Object.assign({}, a);
+  out.xp = Math.max(a.xp || 0, b.xp || 0); out.best = Math.max(a.best || 0, b.best || 0);
+  if ((b.last || "") && (!a.last || new Date(b.last) > new Date(a.last) || (b.last === a.last && (b.days || 0) > (a.days || 0)))) { out.last = b.last; out.days = b.days || 0; }
+  const aw = a.wk === wk ? (a.wxp || 0) : 0, bw = b.wk === wk ? (b.wxp || 0) : 0;
+  out.wk = wk; out.wxp = Math.max(aw, bw);
+  out.lvl = Object.assign({}, a.lvl || {}); Object.entries(b.lvl || {}).forEach(([k, v]) => { out.lvl[k] = Math.max(out.lvl[k] || 0, v); });
+  return out;
+}
+
+// ---------- join screen ----------
+function joinScreen(err = "") {
+  mode = "join"; stopSpeed(); offRank();
+  $("app").innerHTML = `<section class="play pop join">
+    <div class="jhead"><span class="ic" style="background:var(--sun)">${svg("trophy")}</span><div><b>Join the 10c ranking</b><span>Sign in once. Your progress counts for the class ranking.</span></div></div>
+    <label class="fld"><span>Class code</span><input class="inp" id="jCode" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <label class="fld"><span>First name</span><input class="inp" id="jName" maxlength="24" autocomplete="given-name" placeholder="e.g. Lena or Lena K."></label>
+    <label class="fld"><span>PIN (4 digits)</span><input class="inp pin" id="jPin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" type="password"></label>
+    <p class="note">New here? Choose a PIN and remember it. With your name and PIN you can sign in on any phone.</p>
+    ${err ? `<div class="fb no">${svg("no")}<div>${esc(err)}</div></div>` : ""}
+    <div class="row"><button class="btn go" type="button" id="go">Join</button><button class="btn" type="button" id="jLater">Practise without ranking</button></div>
+  </section>`;
+  $("go").addEventListener("click", doJoin);
+  $("jLater").addEventListener("click", () => { try { sessionStorage.setItem("app-10c-later", "1"); } catch (e) {} home(); });
+  ["jCode", "jName", "jPin"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doJoin(); } }));
+  $(err ? "jName" : "jCode").focus();
+}
+async function doJoin() {
+  const code = $("jCode").value, name = cleanName($("jName").value), pin = $("jPin").value.trim();
+  const btn = $("go"); btn.disabled = true; btn.textContent = "One moment …";
+  const fail = m => { const c = $("jCode").value, n = $("jName").value; joinScreen(m); $("jCode").value = c; $("jName").value = n; };
+  if (await sha(normCode(code)) !== CLASS_HASH) return fail("Wrong class code. Ask your teacher.");
+  if (!/^[A-Za-zÄÖÜäöüßÀ-ÿ][A-Za-zÄÖÜäöüßÀ-ÿ .'-]{1,23}$/.test(name)) return fail("Please enter your first name (letters only).");
+  if (!/^\d{4}$/.test(pin)) return fail("Your PIN must have exactly 4 digits.");
+  const d = getDb(); if (!d) return fail("No connection. Check your internet and try again.");
+  const id = slug(name), ph = await sha(id + ":" + pin), ref = d.ref(ROOT + "/users/" + id);
+  let snap;
+  try { snap = (await ref.get()).val(); } catch (e) { return fail("The ranking is not reachable right now. Try again later."); }
+  if (snap && snap.pin && snap.pin !== ph) return fail(`The name “${name}” is already taken and the PIN does not match. If this is not you, add the first letter of your surname, e.g. “${name.split(" ")[0]} K.”`);
+  if (snap) st = merge(st, snap);
+  me = { id, name: snap && snap.name ? snap.name : name };
+  try { localStorage.setItem(ME_KEY, JSON.stringify(me)); } catch (e) {}
+  try { await ref.update(Object.assign(payload(), { pin: ph })); } catch (e) { me = null; try { localStorage.removeItem(ME_KEY); } catch (x) {} return fail("Saving did not work. Try again later."); }
+  save(); drawTop(); resetIdle(); confetti(); rankScreen();
+}
+
+// ---------- ranking ----------
+const TABS = [
+  { id: "xp", name: "Total XP", val: u => u.xp || 0, fmt: v => v + " XP" },
+  { id: "week", name: "This week", val: u => u.wk === weekKey() ? (u.wxp || 0) : 0, fmt: v => v + " XP" },
+  { id: "speed", name: "Speed", val: u => u.best || 0, fmt: v => v + " words" },
+  { id: "streak", name: "Streak", val: u => streakNow(u), fmt: v => v + (v === 1 ? " day" : " days") }
+];
+function offRank() { if (rankRef) { rankRef.off(); rankRef = null; } }
+function rankScreen() {
+  if (!me) return joinScreen();
+  mode = "rank"; stopSpeed(); offRank();
+  shell("Ranking", `<div class="tabs" role="tablist">${TABS.map(t => `<button type="button" role="tab" class="tab${t.id === rankTab ? " on" : ""}" data-t="${t.id}" aria-selected="${t.id === rankTab}">${t.name}</button>`).join("")}</div>
+    <ol class="rank" id="rankList"><li class="note">Loading …</li></ol>
+    <p class="note center" id="rankNote"></p>`);
+  document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { rankTab = b.dataset.t; document.querySelectorAll(".tab").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b); }); drawRank(); }));
+  const d = getDb(); if (!d) { $("rankList").innerHTML = `<li class="note">No connection. The ranking needs internet.</li>`; return; }
+  scheduleSync();
+  rankRef = d.ref(ROOT + "/users");
+  rankRef.on("value", s => { rankData = s.val() || {}; drawRank(); }, () => { $("rankList").innerHTML = `<li class="note">The ranking is not reachable right now.</li>`; });
+}
+let rankData = {};
+function drawRank() {
+  const list = $("rankList"); if (!list) return;
+  const t = TABS.find(x => x.id === rankTab);
+  const rows = Object.entries(rankData).filter(([, u]) => u && u.name).map(([id, u]) => ({ id, name: u.name, v: t.val(u), u }))
+    .sort((a, b) => b.v - a.v || a.name.localeCompare(b.name));
+  let place = 0, prev = null;
+  list.innerHTML = rows.map((r, i) => {
+    if (r.v !== prev) { place = i + 1; prev = r.v; }
+    const medal = r.v > 0 && place <= 3 ? ` m${place}` : "";
+    const tools = teacher ? `<span class="tt"><button class="btn small" type="button" data-pin="${esc(r.id)}">PIN reset</button><button class="btn small no" type="button" data-del="${esc(r.id)}">Delete</button></span>` : "";
+    return `<li class="${me && r.id === me.id ? "me" : ""}"><span class="pl${medal}">${place}</span><span class="nm">${esc(r.name)}${me && r.id === me.id ? " <small>(you)</small>" : ""}</span><span class="vl">${t.fmt(r.v)}</span>${tools}</li>`;
+  }).join("") || `<li class="note">Nobody is here yet.</li>`;
+  $("rankNote").textContent = rankTab === "week" ? "The weekly ranking starts again every Monday." : rankTab === "streak" ? "Days in a row with at least one right answer." : rankTab === "speed" ? "Best score in the 60-second speed round." : "All XP you have collected.";
+  if (teacher) {
+    list.querySelectorAll("[data-pin]").forEach(b => b.addEventListener("click", () => { getDb().ref(ROOT + "/users/" + b.dataset.pin + "/pin").remove(); b.textContent = "PIN removed"; b.disabled = true; }));
+    list.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
+      if (b.dataset.sure) getDb().ref(ROOT + "/users/" + b.dataset.del).remove(); else { b.dataset.sure = "1"; b.textContent = "Sure? Delete"; }
+    }));
+  }
+}
+async function teacherLogin() {
+  const c = prompt("Teacher code");
+  if (c && await sha(normCode(c)) === TEACHER_HASH) { teacher = true; try { sessionStorage.setItem("app-10c-teacher", "1"); } catch (e) {} if (mode === "rank") drawRank(); }
+}
+if (new URLSearchParams(location.search).has("teacher") && !teacher) setTimeout(teacherLogin, 400);
+
+function signOut() {
+  if (syncT) flushSync(); offRank(); me = null;
+  try { localStorage.removeItem(ME_KEY); localStorage.removeItem(KEY); } catch (e) {}
+  st = load(); drawTop(); resetIdle(); joinScreen();
+}
+
+let later = false; try { later = sessionStorage.getItem("app-10c-later") === "1"; } catch (e) {}
+drawTop(); resetIdle(); if (me || later) home(); else joinScreen();
 </script>
 <script>
 if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); }); }
